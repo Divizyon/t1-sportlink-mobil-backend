@@ -21,6 +21,7 @@ export const notFound = (req: Request, res: Response, next: NextFunction) => {
  */
 export const errorHandler = (
   err: Error,
+  _: Request,
   res: Response
 ) => {
   // Durum kodunu belirle
