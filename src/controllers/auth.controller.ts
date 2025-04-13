@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { z } from 'zod';
 import authService from '../services/auth.service';
 import asyncHandler from '../utils/asyncHandler';
@@ -98,7 +98,7 @@ class AuthController {
   /**
    * Kullanıcı çıkışı yapar
    */
-  logout = asyncHandler(async (req: Request, res: Response) => {
+  logout = asyncHandler(async (_: Request, res: Response) => {
     const result = await authService.logout();
     
     if (result.error) {
@@ -117,7 +117,7 @@ class AuthController {
   /**
    * Mevcut kullanıcı bilgisini alır
    */
-  getUser = asyncHandler(async (req: Request, res: Response) => {
+  getUser = asyncHandler(async (_: Request, res: Response) => {
     const { user, error } = await authService.getCurrentUser();
     
     if (error) {
