@@ -57,7 +57,7 @@ export const authenticateToken = async (
     req.user = data.user;
     req.session = sessionData.session;
     
-    next();
+    return next();
   } catch (error) {
     const errorMessage = 
       error instanceof Error ? error.message : 'Kimlik doğrulama hatası';
@@ -75,7 +75,7 @@ export const authenticateToken = async (
  */
 export const optionalAuthenticateToken = async (
   req: Request,
-  res: Response,
+  _: Response,
   next: NextFunction
 ) => {
   try {

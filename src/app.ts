@@ -5,7 +5,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-import { notFound, errorHandler } from './middlewares/error.middleware';
+import { notFound } from './middlewares/error.middleware';
 import routes from './routes';
 
 // Ortam değişkenlerini yükle
@@ -45,9 +45,6 @@ app.use(routes);
 
 // 404 middleware'i ekle
 app.use(notFound);
-
-// Hata işleyici middleware'ini ekle
-app.use(errorHandler);
 
 // Sunucuyu başlat
 if (process.env.NODE_ENV !== 'test') {
