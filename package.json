@@ -9,6 +9,7 @@
     "build": "tsc"
   },
   "dependencies": {
+    "@nestjs/swagger": "^11.1.4",
     "@prisma/client": "^6.5.0",
     "@supabase/supabase-js": "^2.49.1",
     "@types/swagger-jsdoc": "^6.0.4",
