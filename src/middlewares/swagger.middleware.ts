@@ -1,30 +1,30 @@
 import { Router } from 'express';
 import swaggerUi from 'swagger-ui-express';
-import { swaggerSpec } from '../config/swagger';
+import { swaggerSpec } from '../config/swagger.config';
 
 const router = Router();
 
-const swaggerUiOptions: swaggerUi.SwaggerUiOptions = {
-  customSiteTitle: 'Sportlink API Dokümantasyonu',
-  customCss: '.swagger-ui .topbar { display: none }',
+// Swagger UI özelleştirme seçenekleri
+const swaggerUiOptions = {
+  customCss: '.swagger-ui .topbar { display: none }', // Üst çubuğu gizle
+  customSiteTitle: 'SportLink API Dokümantasyonu',
+  customfavIcon: '/favicon.ico',
   swaggerOptions: {
     persistAuthorization: true,
-    displayRequestDuration: true,
+    docExpansion: 'none',
     filter: true,
-    tryItOutEnabled: process.env.NODE_ENV !== 'production'
-  }
+    displayRequestDuration: true,
+  },
 };
 
-// Sadece development ortamında Swagger UI'ı etkinleştir
-if (process.env.NODE_ENV !== 'production') {
-  router.use('/api-docs', swaggerUi.serve);
-  router.get('/api-docs', swaggerUi.setup(swaggerSpec, swaggerUiOptions));
+// Swagger JSON endpoint'i
+router.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
+});
 
-  // Swagger JSON endpoint
-  router.get('/api-docs.json', (_req, res) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(swaggerSpec);
-  });
-}
+// Swagger UI endpoint'i
+router.use('/api-docs', swaggerUi.serve);
+router.get('/api-docs', swaggerUi.setup(swaggerSpec, swaggerUiOptions));
 
 export const swaggerMiddleware = router; 
