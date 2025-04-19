@@ -1,119 +1,176 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-model User {
-  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email         String        @unique @db.VarChar(255)
-  password      String        @db.VarChar(255)
-  firstName     String        @map("first_name") @db.VarChar(255)
-  lastName      String        @map("last_name") @db.VarChar(255)
-  phoneNumber   String?       @map("phone_number") @db.VarChar(20)
-  role          UserRole      @default(USER)
-  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime      @default(now()) @map("updated_at") @db.Timestamptz(6)
-  profile       Profile?
-  reservations  Reservation[]
+model Users {
+  id                         BigInt   @id @default(autoincrement())
+  username                   String
+  password                   String
+  email                      String
+  first_name                 String
+  last_name                  String
+  phone                      String
+  profile_picture            String
+  default_location_latitude  Float
+  default_location_longitude Float
+  role                       String
+  created_at                 DateTime @default(now())
+  updated_at                 DateTime @updatedAt
 
-  @@map("users")
+  createdEvents       Events[]             @relation("UserEvents")
+  userSports          User_Sports[]
+  userRatingsGiven    User_Ratings[]       @relation("RatingUser")
+  userRatingsReceived User_Ratings[]       @relation("RatedUser")
+  eventParticipants   Event_Participants[]
+  eventRatings        Event_Ratings[]
+  notifications       Notifications[]
+  adminLogs           Admin_Logs[]
+  reportsMade         Reports[]            @relation("Reporter")
+  reportsReceived     Reports[]            @relation("Reported")
 }
 
-model Profile {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId      String    @unique @map("user_id") @db.Uuid
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  avatar      String?   @db.VarChar(255)
-  birthDate   DateTime? @map("birth_date") @db.Date
-  gender      Gender?
-  address     String?   @db.Text
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+model Sports {
+  id          BigInt @id @default(autoincrement())
+  name        String
+  description String
+  icon        String
 
-  @@map("profiles")
+  events     Events[]
+  news       News[]
+  userSports User_Sports[]
 }
 
-model Facility {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String    @db.VarChar(255)
-  address     String    @db.Text
-  phone       String?   @db.VarChar(20)
-  description String?   @db.Text
-  imageUrl    String?   @map("image_url") @db.VarChar(255)
-  courts      Court[]
-  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+model User_Sports {
+  user_id     BigInt
+  sport_id    BigInt
+  skill_level String
 
-  @@map("facilities")
+  user  Users  @relation(fields: [user_id], references: [id])
+  sport Sports @relation(fields: [sport_id], references: [id])
+
+  @@id([user_id, sport_id])
 }
 
-model Court {
-  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String        @db.VarChar(255)
-  facilityId  String        @map("facility_id") @db.Uuid
-  facility    Facility      @relation(fields: [facilityId], references: [id], onDelete: Cascade)
-  sportType   SportType     @map("sport_type")
-  hourlyRate  Float         @map("hourly_rate") @db.DoublePrecision
-  isActive    Boolean       @default(true) @map("is_active")
-  reservations Reservation[]
-  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime      @default(now()) @map("updated_at") @db.Timestamptz(6)
+model News {
+  id             BigInt   @id @default(autoincrement())
+  title          String
+  content        String
+  source_url     String
+  image_url      String
+  published_date DateTime
+  sport_id       BigInt
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 
-  @@map("courts")
+  sport Sports @relation(fields: [sport_id], references: [id])
 }
 
-model Reservation {
-  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId      String            @map("user_id") @db.Uuid
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  courtId     String            @map("court_id") @db.Uuid
-  court       Court             @relation(fields: [courtId], references: [id], onDelete: Cascade)
-  startTime   DateTime          @map("start_time") @db.Timestamptz(6)
-  endTime     DateTime          @map("end_time") @db.Timestamptz(6)
-  status      ReservationStatus @default(PENDING)
-  totalPrice  Float             @map("total_price") @db.DoublePrecision
-  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime          @default(now()) @map("updated_at") @db.Timestamptz(6)
+model Events {
+  id                 BigInt   @id @default(autoincrement())
+  creator_id         BigInt
+  sport_id           BigInt
+  title              String
+  description        String
+  event_date         DateTime
+  start_time         DateTime
+  end_time           DateTime
+  location_name      String
+  location_latitude  Float
+  location_longitude Float
+  max_participants   Int
+  status             String
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
 
-  @@map("reservations")
+  creator       Users                @relation("UserEvents", fields: [creator_id], references: [id])
+  sport         Sports               @relation(fields: [sport_id], references: [id])
+  participants  Event_Participants[]
+  ratings       Event_Ratings[]
+  notifications Notifications[]
+  reports       Reports[]
 }
 
-enum UserRole {
-  ADMIN
-  STAFF
-  USER
+model Event_Participants {
+  event_id  BigInt
+  user_id   BigInt
+  joined_at DateTime @default(now())
+  role      String
 
-  @@map("user_roles")
+  event Events @relation(fields: [event_id], references: [id])
+  user  Users  @relation(fields: [user_id], references: [id])
+
+  @@id([event_id, user_id])
 }
 
-enum Gender {
-  MALE
-  FEMALE
-  OTHER
+model Event_Ratings {
+  id         BigInt   @id @default(autoincrement())
+  event_id   BigInt
+  user_id    BigInt
+  rating     Int
+  review     String
+  created_at DateTime @default(now())
 
-  @@map("genders")
+  event Events @relation(fields: [event_id], references: [id])
+  user  Users  @relation(fields: [user_id], references: [id])
 }
 
-enum SportType {
-  FOOTBALL
-  BASKETBALL
-  TENNIS
-  VOLLEYBALL
-  SWIMMING
+model Notifications {
+  id                BigInt   @id @default(autoincrement())
+  user_id           BigInt
+  notification_type String
+  content           String
+  read_status       Boolean  @default(false)
+  created_at        DateTime @default(now())
+  event_id          BigInt
 
-  @@map("sport_types")
+  user  Users  @relation(fields: [user_id], references: [id])
+  event Events @relation(fields: [event_id], references: [id])
 }
 
-enum ReservationStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-  COMPLETED
+model Reports {
+  id            BigInt   @id @default(autoincrement())
+  reporter_id   BigInt
+  reported_id   BigInt
+  event_id      BigInt
+  report_reason String
+  report_date   DateTime @default(now())
+  status        String
+  admin_notes   String?
 
-  @@map("reservation_statuses")
+  reporter Users  @relation("Reporter", fields: [reporter_id], references: [id])
+  reported Users  @relation("Reported", fields: [reported_id], references: [id])
+  event    Events @relation(fields: [event_id], references: [id])
+}
+
+model Admin_Logs {
+  id          BigInt   @id @default(autoincrement())
+  admin_id    BigInt
+  action_type String
+  description String
+  created_at  DateTime @default(now())
+
+  admin Users @relation(fields: [admin_id], references: [id])
+}
+
+model User_Ratings {
+  id             BigInt   @id @default(autoincrement())
+  rated_user_id  BigInt
+  rating_user_id BigInt
+  rating_value   Int
+  review_text    String
+  created_at     DateTime @default(now())
+
+  ratedUser  Users @relation("RatedUser", fields: [rated_user_id], references: [id])
+  ratingUser Users @relation("RatingUser", fields: [rating_user_id], references: [id])
 }
