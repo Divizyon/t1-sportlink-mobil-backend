@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { notFound } from './middlewares/error.middleware';
 import routes from './routes';
+import { swaggerMiddleware } from './middlewares/swagger.middleware';
 
 // Ortam değişkenlerini yükle
 dotenv.config();
@@ -39,6 +40,9 @@ const limiter = rateLimit({
 
 // Tüm rotalar için rate limiter uygula
 app.use(limiter);
+
+// Swagger dokümantasyonunu ekle
+app.use(swaggerMiddleware);
 
 // Rotaları ekle
 app.use(routes);
