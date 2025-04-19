@@ -8,6 +8,10 @@ import dotenv from 'dotenv';
 import { notFound } from './middlewares/error.middleware';
 import routes from './routes';
 import { swaggerMiddleware } from './middlewares/swagger.middleware';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './config/swagger';
+import { seedDatabase } from './utils/seedData';
+import logger from './utils/logger';
 
 // Ortam değişkenlerini yükle
 dotenv.config();
@@ -44,11 +48,23 @@ app.use(limiter);
 // Swagger dokümantasyonunu ekle
 app.use(swaggerMiddleware);
 
+// Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 // Rotaları ekle
 app.use(routes);
 
 // 404 middleware'i ekle
 app.use(notFound);
+
+// Uygulama başladığında seed işlemini gerçekleştir
+(async () => {
+  try {
+    await seedDatabase();
+  } catch (error) {
+    logger.error('Failed to seed database:', error);
+  }
+})();
 
 // Sunucuyu başlat
 if (process.env.NODE_ENV !== 'test') {
