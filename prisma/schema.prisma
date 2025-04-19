@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String        @unique @db.VarChar(255)
+  password      String        @db.VarChar(255)
+  firstName     String        @map("first_name") @db.VarChar(255)
+  lastName      String        @map("last_name") @db.VarChar(255)
+  phoneNumber   String?       @map("phone_number") @db.VarChar(20)
+  role          UserRole      @default(USER)
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime      @default(now()) @map("updated_at") @db.Timestamptz(6)
+  profile       Profile?
+  reservations  Reservation[]
+
+  @@map("users")
+}
+
+model Profile {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String    @unique @map("user_id") @db.Uuid
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  avatar      String?   @db.VarChar(255)
+  birthDate   DateTime? @map("birth_date") @db.Date
+  gender      Gender?
+  address     String?   @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("profiles")
+}
+
+model Facility {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String    @db.VarChar(255)
+  address     String    @db.Text
+  phone       String?   @db.VarChar(20)
+  description String?   @db.Text
+  imageUrl    String?   @map("image_url") @db.VarChar(255)
+  courts      Court[]
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("facilities")
+}
+
+model Court {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String        @db.VarChar(255)
+  facilityId  String        @map("facility_id") @db.Uuid
+  facility    Facility      @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  sportType   SportType     @map("sport_type")
+  hourlyRate  Float         @map("hourly_rate") @db.DoublePrecision
+  isActive    Boolean       @default(true) @map("is_active")
+  reservations Reservation[]
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime      @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("courts")
+}
+
+model Reservation {
+  id          String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String            @map("user_id") @db.Uuid
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courtId     String            @map("court_id") @db.Uuid
+  court       Court             @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  startTime   DateTime          @map("start_time") @db.Timestamptz(6)
+  endTime     DateTime          @map("end_time") @db.Timestamptz(6)
+  status      ReservationStatus @default(PENDING)
+  totalPrice  Float             @map("total_price") @db.DoublePrecision
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime          @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  @@map("reservations")
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+  USER
+
+  @@map("user_roles")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+
+  @@map("genders")
+}
+
+enum SportType {
+  FOOTBALL
+  BASKETBALL
+  TENNIS
+  VOLLEYBALL
+  SWIMMING
+
+  @@map("sport_types")
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+
+  @@map("reservation_statuses")
+}
