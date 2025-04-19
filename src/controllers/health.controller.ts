@@ -59,7 +59,7 @@ export const getHealthStatus = (_req: Request, res: Response): void => {
 /**
  * Detaylı sistem bilgisi sunar
  */
-export const getDetailedHealth = (_req: Request, res: Response): void => {
+export const getDetailedHealth = (_req  : Request, res: Response): void => {
   const startTime = new Date(Date.now() - process.uptime() * 1000);
   
   res.json({

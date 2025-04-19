@@ -18,7 +18,7 @@ const swaggerUiOptions = {
 };
 
 // Swagger JSON endpoint'i
-router.get('/api-docs.json', (req, res) => {
+router.get('/api-docs.json', (_req, res) => {
   res.setHeader('Content-Type', 'application/json');
   res.send(swaggerSpec);
 });
