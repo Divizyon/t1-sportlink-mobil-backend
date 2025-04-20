@@ -11,7 +11,6 @@ export class EventService {
         ...eventData,
         creator_id: userId,
         status: 'active',
-        approval_status: 'pending',
         updated_at: new Date(),
       })
       .select('*')

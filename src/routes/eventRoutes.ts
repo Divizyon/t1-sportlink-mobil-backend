@@ -4,7 +4,7 @@ import { EventService } from '../services/eventService';
 import { authenticateUser } from '../middlewares/auth';
 import { validateRequest } from '../middlewares/validation';
 import { createEventSchema, updateEventSchema } from '../validations/eventValidation';
-import supabase from '../config/supabase';
+import { supabase } from '../config/supabaseClient';
 
 const router = Router();
 
