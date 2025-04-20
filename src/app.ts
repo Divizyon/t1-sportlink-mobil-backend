@@ -9,7 +9,7 @@ import { notFound } from './middlewares/error.middleware';
 import routes from './routes';
 import { swaggerMiddleware } from './middlewares/swagger.middleware';
 import swaggerUi from 'swagger-ui-express';
-import swaggerSpec from './config/swagger';
+import { swaggerSpec } from './config/swagger.config';
 import { seedDatabase } from './utils/seedData';
 import logger from './utils/logger';
 
