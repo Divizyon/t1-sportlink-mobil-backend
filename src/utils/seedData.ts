@@ -49,7 +49,7 @@ const seedData = {
   ],
 };
 
-// Seed işleminin yapılıp yapılmadığını kontrol eden flag
+// Seed işleminin yapılıp yapılmadığını kontrol eden flag,
 let isSeeded = false;
 
 export const seedDatabase = async (): Promise<void> => {

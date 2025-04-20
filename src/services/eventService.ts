@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { Event, CreateEventDto, UpdateEventDto } from '../types/event';
+import { Event, CreateEventDto, UpdateEventDto, EventFilters } from '../types/event';
 
 export class EventService {
   constructor(private readonly supabase: SupabaseClient) {}
@@ -85,23 +85,10 @@ export class EventService {
     }
   }
 
-  async getAllEvents(filters?: {
-    id?: number;
-    sport_id?: number;
-    status?: string;
-    approval_status?: string;
-    start_date?: Date;
-    end_date?: Date;
-    location_latitude?: number;
-    location_longitude?: number;
-    radius?: number; // km cinsinden
-  }): Promise<Event[]> {
+  async getAllEvents(filters?: EventFilters): Promise<Event[]> {
     let query = this.supabase.from('Events').select('*');
 
     if (filters) {
-      if (filters.id) {
-        query = query.eq('id', filters.id);
-      }
       if (filters.sport_id) {
         query = query.eq('sport_id', filters.sport_id);
       }

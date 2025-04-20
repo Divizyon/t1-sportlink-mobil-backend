@@ -93,11 +93,6 @@ const eventController = new EventController(eventService);
  *     tags: [Etkinlikler]
  *     parameters:
  *       - in: query
- *         name: id
- *         schema:
- *           type: number
- *         description: Etkinlik ID'sine göre filtrele
- *       - in: query
  *         name: sport_id
  *         schema:
  *           type: number

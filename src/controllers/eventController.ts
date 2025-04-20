@@ -75,7 +75,6 @@ export class EventController {
   getAllEvents = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const filters = {
-        id: req.query.id ? parseInt(req.query.id as string) : undefined,
         sport_id: req.query.sport_id ? parseInt(req.query.sport_id as string) : undefined,
         status: req.query.status as string
       };

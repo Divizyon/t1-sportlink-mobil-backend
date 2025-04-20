@@ -17,6 +17,17 @@ export interface Event {
   updated_at: Date;
 }
 
+export interface EventFilters {
+  sport_id?: number;
+  status?: string;
+  approval_status?: string;
+  start_date?: Date;
+  end_date?: Date;
+  location_latitude?: number;
+  location_longitude?: number;
+  radius?: number; // km cinsinden
+}
+
 export interface CreateEventDto {
   sport_id: number;
   title: string;
