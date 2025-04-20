@@ -4,7 +4,7 @@ import { Event, CreateEventDto, UpdateEventDto } from '../types/event';
 export class EventService {
   constructor(private readonly supabase: SupabaseClient) {}
 
-  async createEvent(userId: number, eventData: CreateEventDto): Promise<Event> {
+  async createEvent(userId: string, eventData: CreateEventDto): Promise<Event> {
     const { data, error } = await this.supabase
       .from('Events')
       .insert({
@@ -157,7 +157,7 @@ export class EventService {
     return data || [];
   }
 
-  async approveEvent(eventId: number, adminId: number): Promise<Event> {
+  async approveEvent(eventId: number, _adminId: number): Promise<Event> {
     // Admin yetkisi kontrolü yapılmalı
     const { data, error } = await this.supabase
       .from('Events')
@@ -176,12 +176,13 @@ export class EventService {
     return data;
   }
 
-  async rejectEvent(eventId: number, adminId: number, reason?: string): Promise<Event> {
+  async rejectEvent(eventId: number, _adminId: number, reason: string = 'Belirtilmemiş'): Promise<Event> {
     // Admin yetkisi kontrolü yapılmalı
     const { data, error } = await this.supabase
       .from('Events')
       .update({
         approval_status: 'rejected',
+        rejection_reason: reason,
         updated_at: new Date(),
       })
       .eq('id', eventId)

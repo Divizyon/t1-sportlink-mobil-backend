@@ -1,19 +1,17 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request as ExpressRequest, Response, NextFunction } from 'express';
 import supabase from '../config/supabase';
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: number;
-        role: string;
-      };
-    }
-  }
+interface AuthenticatedRequest extends ExpressRequest {
+  user?: {
+    id: string;
+    role: string;
+  };
 }
 
+export { AuthenticatedRequest };
+
 export const authenticateUser = async (
-  req: Request,
+  req: ExpressRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -34,7 +32,7 @@ export const authenticateUser = async (
 
     // User bilgilerini request nesnesine ekle
     req.user = {
-      id: user.id as unknown as number,
+      id: user.id as unknown as string,
       role: user.role as string
     };
 

@@ -24,9 +24,15 @@ const PORT = process.env.PORT || 3000;
 
 // CORS yapılandırması
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || ['http://localhost:3000', 'http://localhost:5173'],
+  origin: ['http://localhost:3000', 'http://localhost:5173'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin'
+  ],
   credentials: true,
   maxAge: 86400 // CORS preflight cache süresi - 24 saat
 };
@@ -36,7 +42,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
 app.use(compression());
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginOpenerPolicy: { policy: "same-origin" }
+}));
 app.use(morgan('dev'));
 
 // Rate limiter yapılandır

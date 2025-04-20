@@ -1,13 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { EventService } from '../services/eventService';
 import { CreateEventDto, UpdateEventDto } from '../types/event';
+import { AuthenticatedRequest } from '../middlewares/auth';
 
 export class EventController {
   constructor(private readonly eventService: EventService) {}
 
-  createEvent = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  createEvent = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = req.user?.id; // Auth middleware'den gelen kullanıcı bilgisi
+      const userId = req.user?.id;
       if (!userId) {
         res.status(401).json({ message: 'Oturum açmanız gerekiyor' });
         return;
