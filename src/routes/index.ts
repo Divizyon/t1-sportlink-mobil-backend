@@ -5,15 +5,13 @@ import userRoutes from './user.routes';
 
 const router = Router();
 
-// API versiyonu ve prefix için ortam değişkenini kullan
-const API_PREFIX = process.env.API_PREFIX || '/api/v1';
-
 // Auth rotalarını kaydet
-router.use(`${API_PREFIX}/auth`, authRoutes);
+router.use('/api/auth', authRoutes);
 
-// Sağlık kontrolü
+// Health check rotalarını kaydet
 router.use('/api', healthRoutes);
 
+// Kullanıcı rotalarını kaydet
 router.use('/api/users', userRoutes);
 
 export default router; 

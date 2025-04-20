@@ -3,6 +3,11 @@ description:
 globs: 
 alwaysApply: false
 ---
+---
+description: 
+globs: 
+alwaysApply: false
+---
 # Cursor Rules for Express, TypeScript, and Node.js Development
 
 ## Project Structure

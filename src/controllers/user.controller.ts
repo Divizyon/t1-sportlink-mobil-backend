@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { supabaseAdmin } from '../config/supabaseClient';
 
 /**
  * @swagger
@@ -20,13 +21,39 @@ import { Request, Response } from 'express';
  *                 properties:
  *                   id:
  *                     type: string
- *                     description: Kullanıcı ID
- *                   name:
+ *                     description: Kullanıcı UUID
+ *                   instance_id:
  *                     type: string
- *                     description: Kullanıcı adı
+ *                     description: Instance ID
  *                   email:
  *                     type: string
  *                     description: E-posta adresi
+ *                   phone:
+ *                     type: string
+ *                     description: Telefon numarası
+ *                   created_at:
+ *                     type: string
+ *                     format: date-time
+ *                     description: Hesap oluşturma tarihi
+ *                   confirmed_at:
+ *                     type: string
+ *                     format: date-time
+ *                     description: E-posta onay tarihi
+ *                   last_sign_in_at:
+ *                     type: string
+ *                     format: date-time
+ *                     description: Son giriş tarihi
+ *                   role:
+ *                     type: string
+ *                     description: Kullanıcı rolü
+ *                   email_confirmed_at:
+ *                     type: string
+ *                     format: date-time
+ *                     description: E-posta onay tarihi
+ *                   phone_confirmed_at:
+ *                     type: string
+ *                     format: date-time
+ *                     description: Telefon onay tarihi
  *       401:
  *         description: Yetkisiz erişim
  *       500:
@@ -34,14 +61,18 @@ import { Request, Response } from 'express';
  */
 export const getUsers = async (_req: Request, res: Response) => {
   try {
-    // Kullanıcı listesini getir
-    const users = [
-      { id: '1', name: 'Test Kullanıcı', email: 'test@example.com' }
-    ];
-    
-    res.status(200).json(users);
+    const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
+
+    if (error) {
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
+
+    return res.status(200).json(users);
   } catch (error) {
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
       error: 'Kullanıcılar getirilirken bir hata oluştu' 
     });
@@ -62,7 +93,7 @@ export const getUsers = async (_req: Request, res: Response) => {
  *         required: true
  *         schema:
  *           type: string
- *         description: Kullanıcı ID
+ *         description: Kullanıcı UUID
  *     responses:
  *       200:
  *         description: Kullanıcı başarıyla getirildi
@@ -73,13 +104,39 @@ export const getUsers = async (_req: Request, res: Response) => {
  *               properties:
  *                 id:
  *                   type: string
- *                   description: Kullanıcı ID
- *                 name:
+ *                   description: Kullanıcı UUID
+ *                 instance_id:
  *                   type: string
- *                   description: Kullanıcı adı
+ *                   description: Instance ID
  *                 email:
  *                   type: string
  *                   description: E-posta adresi
+ *                 phone:
+ *                   type: string
+ *                   description: Telefon numarası
+ *                 created_at:
+ *                   type: string
+ *                   format: date-time
+ *                   description: Hesap oluşturma tarihi
+ *                 confirmed_at:
+ *                   type: string
+ *                   format: date-time
+ *                   description: E-posta onay tarihi
+ *                 last_sign_in_at:
+ *                   type: string
+ *                   format: date-time
+ *                   description: Son giriş tarihi
+ *                 role:
+ *                   type: string
+ *                   description: Kullanıcı rolü
+ *                 email_confirmed_at:
+ *                   type: string
+ *                   format: date-time
+ *                   description: E-posta onay tarihi
+ *                 phone_confirmed_at:
+ *                   type: string
+ *                   format: date-time
+ *                   description: Telefon onay tarihi
  *       404:
  *         description: Kullanıcı bulunamadı
  *       401:
@@ -91,12 +148,14 @@ export const getUserById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
-    // Örnek kullanıcı verisi
-    const user = { 
-      id, 
-      name: 'Test Kullanıcı', 
-      email: 'test@example.com' 
-    };
+    const { data: { user }, error } = await supabaseAdmin.auth.admin.getUserById(id);
+    
+    if (error) {
+      return res.status(500).json({ 
+        success: false, 
+        error: error.message 
+      });
+    }
     
     if (!user) {
       return res.status(404).json({ 
