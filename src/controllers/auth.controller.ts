@@ -2,28 +2,15 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import authService from '../services/auth.service';
 import asyncHandler from '../utils/asyncHandler';
-import { supabase } from '../lib/supabase';
+import { supabase, supabaseAdmin } from '../lib/supabase';
 import { LoginRequest, LoginResponse } from '../types/auth.types';
+import { registerSchema } from '../validators/auth.validator';
+import { ValidationError } from '../utils/errors';
 
 // Validasyon şemaları
 const loginSchema = z.object({
   email: z.string().email('Geçerli bir e-posta adresi giriniz'),
   password: z.string().min(6, 'Şifre en az 6 karakter olmalıdır')
-});
-
-const registerSchema = z.object({
-  name: z.string().min(3, 'İsim en az 3 karakter olmalıdır'),
-  email: z.string().email('Geçerli bir e-posta adresi giriniz'),
-  password: z.string()
-    .min(8, 'Şifre en az 8 karakter olmalıdır')
-    .regex(/[A-Z]/, 'Şifre en az bir büyük harf içermelidir')
-    .regex(/[a-z]/, 'Şifre en az bir küçük harf içermelidir')
-    .regex(/[0-9]/, 'Şifre en az bir rakam içermelidir')
-    .regex(/[^A-Za-z0-9]/, 'Şifre en az bir özel karakter içermelidir'),
-  confirmPassword: z.string()
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Şifreler eşleşmiyor',
-  path: ['confirmPassword']
 });
 
 const emailSchema = z.object({
@@ -37,63 +24,57 @@ const passwordSchema = z.object({
 /**
  * Yeni kullanıcı kaydı yapar
  */
-export const register = async (req: Request, res: Response): Promise<void> => {
+export const register = async (req: Request, res: Response) => {
   try {
     const validatedData = registerSchema.parse(req.body);
 
-    const { data, error } = await supabase.auth.signUp({
+    // Admin client ile kullanıcı oluştur (otomatik login olmadan)
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: validatedData.email,
       password: validatedData.password,
-      options: {
-        data: {
-          name: validatedData.name
-        }
-      }
+      user_metadata: {
+        email_confirmed: true
+      },
+      email_confirm: true // Email'i otomatik onayla
     });
 
-    if (error) {
-      if (error.message.includes('email')) {
-        res.status(400).json({
-          success: false,
-          message: 'Bu e-posta adresi zaten kullanılıyor',
-          errors: {
-            email: 'Bu e-posta adresi ile daha önce kayıt olunmuş'
-          }
-        });
-        return;
-      }
-
-      throw error;
+    if (authError) {
+      throw authError;
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
-      message: 'Kayıt başarılı. Lütfen giriş yapınız.',
-      userId: data.user?.id
+      message: 'Kullanıcı başarıyla oluşturuldu. Giriş yapabilirsiniz.',
+      data: {
+        id: authData.user.id,
+        email: authData.user.email
+      }
     });
+
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      res.status(400).json({
+    if (error instanceof ValidationError) {
+      return res.status(400).json({
         success: false,
         message: 'Validasyon hatası',
-        errors: error.errors.reduce((acc, curr) => ({
-          ...acc,
-          [curr.path[0]]: curr.message
-        }), {})
+        errors: (error as ValidationError).errors
       });
-      return;
     }
 
-    console.error('Kayıt hatası:', error);
-    res.status(500).json({
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validasyon hatası',
+        errors: (error as z.ZodError).errors
+      });
+    }
+
+    return res.status(500).json({
       success: false,
-      message: 'Sunucu hatası',
-      errors: {
-        general: 'Beklenmeyen bir hata oluştu'
-      }
+      message: 'Kullanıcı oluşturulurken bir hata oluştu',
+      error: error instanceof Error ? error.message : 'Bilinmeyen hata'
     });
   }
-};
+}
 
 /**
  * Kimlik doğrulama işlemlerini yöneten kontrolcü
@@ -181,12 +162,15 @@ class AuthController {
     try {
       const validatedData = loginSchema.parse(req.body);
 
+      console.log('Login attempt for:', validatedData.email);
+
       const { data: { user, session }, error } = await supabase.auth.signInWithPassword({
         email: validatedData.email,
         password: validatedData.password,
       });
 
       if (error) {
+        console.log('Login error:', error);
         res.status(401).json({
           success: false,
           message: 'Geçersiz e-posta veya şifre. Lütfen tekrar deneyiniz.'
@@ -195,11 +179,53 @@ class AuthController {
       }
 
       if (!user || !session) {
+        console.log('No user or session found');
         res.status(401).json({
           success: false,
           message: 'Kullanıcı bulunamadı.'
         });
         return;
+      }
+
+      console.log('User logged in successfully:', user.id);
+
+      // Kullanıcının public.users tablosunda olup olmadığını kontrol et
+      const { data: existingUser, error: checkError } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('id', user.id)
+        .single();
+
+      console.log('Existing user check:', { existingUser, checkError });
+
+      // Eğer kullanıcı public.users tablosunda yoksa ekle
+      if (!existingUser) {
+        console.log('Attempting to insert user into public.users');
+        const userData = {
+          id: user.id,
+          email: user.email,
+          username: user.email?.split('@')[0] || 'user',
+          first_name: 'Kullanıcı',
+          last_name: 'Kullanıcı',
+          phone: '0000000000',
+          profile_picture: 'https://randomuser.me/api/portraits/men/32.jpg',
+          default_location_latitude: 0,
+          default_location_longitude: 0,
+          role: 'USER',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        console.log('User data to insert:', userData);
+
+        const { error: insertError } = await supabaseAdmin
+          .from('users')
+          .insert([userData]);
+
+        console.log('Insert result:', { insertError });
+
+        if (insertError) {
+          console.error('Public users tablosuna ekleme hatası:', insertError);
+        }
       }
 
       const response: LoginResponse = {
