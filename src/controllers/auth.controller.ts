@@ -11,8 +11,19 @@ const loginSchema = z.object({
   password: z.string().min(6, 'Şifre en az 6 karakter olmalıdır')
 });
 
-const registerSchema = loginSchema.extend({
-  name: z.string().min(2, 'İsim en az 2 karakter olmalıdır').optional()
+const registerSchema = z.object({
+  name: z.string().min(3, 'İsim en az 3 karakter olmalıdır'),
+  email: z.string().email('Geçerli bir e-posta adresi giriniz'),
+  password: z.string()
+    .min(8, 'Şifre en az 8 karakter olmalıdır')
+    .regex(/[A-Z]/, 'Şifre en az bir büyük harf içermelidir')
+    .regex(/[a-z]/, 'Şifre en az bir küçük harf içermelidir')
+    .regex(/[0-9]/, 'Şifre en az bir rakam içermelidir')
+    .regex(/[^A-Za-z0-9]/, 'Şifre en az bir özel karakter içermelidir'),
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'Şifreler eşleşmiyor',
+  path: ['confirmPassword']
 });
 
 const emailSchema = z.object({
@@ -24,44 +35,70 @@ const passwordSchema = z.object({
 });
 
 /**
+ * Yeni kullanıcı kaydı yapar
+ */
+export const register = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const validatedData = registerSchema.parse(req.body);
+
+    const { data, error } = await supabase.auth.signUp({
+      email: validatedData.email,
+      password: validatedData.password,
+      options: {
+        data: {
+          name: validatedData.name
+        }
+      }
+    });
+
+    if (error) {
+      if (error.message.includes('email')) {
+        res.status(400).json({
+          success: false,
+          message: 'Bu e-posta adresi zaten kullanılıyor',
+          errors: {
+            email: 'Bu e-posta adresi ile daha önce kayıt olunmuş'
+          }
+        });
+        return;
+      }
+
+      throw error;
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Kayıt başarılı. Lütfen giriş yapınız.',
+      userId: data.user?.id
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({
+        success: false,
+        message: 'Validasyon hatası',
+        errors: error.errors.reduce((acc, curr) => ({
+          ...acc,
+          [curr.path[0]]: curr.message
+        }), {})
+      });
+      return;
+    }
+
+    console.error('Kayıt hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Sunucu hatası',
+      errors: {
+        general: 'Beklenmeyen bir hata oluştu'
+      }
+    });
+  }
+};
+
+/**
  * Kimlik doğrulama işlemlerini yöneten kontrolcü
  */
 class AuthController {
-  /**
-   * Yeni kullanıcı kaydı yapar
-   */
-  register = asyncHandler(async (req: Request, res: Response) => {
-    // Giriş verilerini doğrula
-    const validatedData = registerSchema.safeParse(req.body);
-    
-    if (!validatedData.success) {
-      return res.status(400).json({ 
-        success: false, 
-        error: validatedData.error.errors 
-      });
-    }
-    
-    const credentials = validatedData.data;
-    
-    // Kullanıcı kaydı yap
-    const result = await authService.register(credentials);
-    
-    if (result.error) {
-      return res.status(400).json({ 
-        success: false, 
-        error: result.error 
-      });
-    }
-    
-    return res.status(201).json({ 
-      success: true, 
-      data: {
-        user: result.user,
-        session: result.session
-      }
-    });
-  });
-  
   /**
    * Kullanıcı girişi yapar
    */
@@ -142,11 +179,11 @@ class AuthController {
    */
   login = asyncHandler(async (req: Request<{}, {}, LoginRequest>, res: Response): Promise<void> => {
     try {
-      const { email, password } = req.body;
+      const validatedData = loginSchema.parse(req.body);
 
       const { data: { user, session }, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: validatedData.email,
+        password: validatedData.password,
       });
 
       if (error) {
