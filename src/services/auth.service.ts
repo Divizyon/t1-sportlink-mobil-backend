@@ -1,4 +1,5 @@
-import supabase from '../config/supabase';
+import { supabase } from '../config/supabaseClient';
+import { AppError } from '../utils/appError';
 import { 
   LoginCredentials, 
   RegisterCredentials, 
@@ -11,33 +12,28 @@ import {
  * Authentication servis sınıfı.
  * Supabase Auth ile kullanıcı kimlik doğrulama işlemlerini yönetir.
  */
-class AuthService {
+export class AuthService {
   /**
    * Kullanıcı hesabı oluşturur
    * @param credentials Kayıt bilgileri
    * @returns Kullanıcı ve oturum bilgileri
    */
   async register({ email, password, name }: RegisterCredentials): Promise<AuthResponse> {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name
-          }
+    const { data: user, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name
         }
-      });
-
-      if (error) {
-        return { user: null, session: null, error: error.message };
       }
+    });
 
-      return { user: data.user, session: data.session };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu';
-      return { user: null, session: null, error: errorMessage };
+    if (error) {
+      throw new AppError('Kayıt işlemi başarısız oldu', 400);
     }
+
+    return { user: user.user, session: user.session };
   }
 
   /**
@@ -46,39 +42,27 @@ class AuthService {
    * @returns Kullanıcı ve oturum bilgileri
    */
   async login({ email, password }: LoginCredentials): Promise<AuthResponse> {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
 
-      if (error) {
-        return { user: null, session: null, error: error.message };
-      }
-
-      return { user: data.user, session: data.session };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu';
-      return { user: null, session: null, error: errorMessage };
+    if (error) {
+      throw new AppError('Giriş işlemi başarısız oldu', 401);
     }
+
+    return { user: data.user, session: data.session };
   }
 
   /**
    * Kullanıcı çıkışı yapar
    * @returns Başarı durumu
    */
-  async logout(): Promise<{ error?: string }> {
-    try {
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        return { error: error.message };
-      }
+  async logout(): Promise<void> {
+    const { error } = await supabase.auth.signOut();
 
-      return {};
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu';
-      return { error: errorMessage };
+    if (error) {
+      throw new AppError('Çıkış işlemi başarısız oldu', 500);
     }
   }
 
@@ -87,18 +71,13 @@ class AuthService {
    * @returns Mevcut oturum bilgisi
    */
   async getCurrentSession() {
-    try {
-      const { data, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        return { session: null, error: error.message };
-      }
-
-      return { session: data.session };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu';
-      return { session: null, error: errorMessage };
+    const { data, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      return { session: null, error: error.message };
     }
+
+    return { session: data.session };
   }
 
   /**
@@ -106,18 +85,8 @@ class AuthService {
    * @returns Mevcut kullanıcı bilgisi
    */
   async getCurrentUser() {
-    try {
-      const { data, error } = await supabase.auth.getUser();
-      
-      if (error) {
-        return { user: null, error: error.message };
-      }
-
-      return { user: data.user };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu';
-      return { user: null, error: errorMessage };
-    }
+    const { data: { user }, error } = await supabase.auth.getUser();
+    return { user, error };
   }
 
   /**
@@ -125,20 +94,11 @@ class AuthService {
    * @param credentials E-posta bilgisi
    * @returns Başarı durumu
    */
-  async resetPassword({ email }: ResetPasswordCredentials): Promise<{ error?: string }> {
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${process.env.APP_URL}/reset-password`
-      });
-      
-      if (error) {
-        return { error: error.message };
-      }
+  async resetPassword({ email }: ResetPasswordCredentials): Promise<void> {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
 
-      return {};
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu';
-      return { error: errorMessage };
+    if (error) {
+      throw new AppError('Şifre sıfırlama işlemi başarısız oldu', 400);
     }
   }
 
@@ -147,20 +107,13 @@ class AuthService {
    * @param credentials Yeni şifre bilgisi
    * @returns Başarı durumu
    */
-  async updatePassword({ password }: UpdatePasswordCredentials): Promise<{ error?: string }> {
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password
-      });
-      
-      if (error) {
-        return { error: error.message };
-      }
+  async updatePassword({ password }: UpdatePasswordCredentials): Promise<void> {
+    const { error } = await supabase.auth.updateUser({
+      password
+    });
 
-      return {};
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu';
-      return { error: errorMessage };
+    if (error) {
+      throw new AppError('Şifre güncelleme işlemi başarısız oldu', 400);
     }
   }
 

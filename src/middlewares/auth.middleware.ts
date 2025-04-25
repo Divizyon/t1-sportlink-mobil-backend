@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import supabase from '../config/supabase';
+import { Request as ExpressRequest, Response, NextFunction } from 'express';
+import { supabase } from '../config/supabaseClient';
 
 // Kullanıcı ve oturum bilgilerini Request nesnesine eklemek için tip genişletme
 declare global {
@@ -11,107 +11,72 @@ declare global {
   }
 }
 
+interface AuthenticatedRequest extends ExpressRequest {
+  user?: {
+    id: string;
+    role: string;
+  };
+}
+
+export { AuthenticatedRequest };
+
 /**
  * JWT token'ı doğrulayan ve kullanıcı bilgisini request nesnesine ekleyen middleware
  */
-export const authenticateToken = async (
-  req: Request,
+export const authenticateUser = async (
+  req: ExpressRequest,
   res: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
-    // Authorization header'dan token'ı al
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader) {
-      return res.status(401).json({
-        success: false,
-        error: 'Yetkilendirme başlığı eksik'
-      });
-    }
-    
-    // Bearer token'ı ayır
-    const token = authHeader.split(' ')[1];
+    const token = req.headers.authorization?.split(' ')[1];
     
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: 'Erişim token\'ı eksik'
-      });
+      res.status(401).json({ message: 'Yetkilendirme başarısız: Token bulunamadı' });
+      return;
     }
-    
-    // Token'ı doğrula ve kullanıcı bilgisini al
-    const { data, error } = await supabase.auth.getUser(token);
-    
-    if (error || !data.user) {
-      return res.status(401).json({
-        success: false,
-        error: error?.message || 'Geçersiz veya süresi dolmuş token'
-      });
+
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+
+    if (error || !user) {
+      res.status(401).json({ message: 'Yetkilendirme başarısız: Geçersiz token' });
+      return;
     }
-    
-    // Session bilgisini al
-    const { data: sessionData } = await supabase.auth.getSession();
-    
-    // Kullanıcı ve oturum bilgisini request'e ekle
-    req.user = data.user;
-    req.session = sessionData.session;
-    
-    return next();
+
+    // User bilgilerini request nesnesine ekle
+    req.user = {
+      id: user.id as unknown as string,
+      role: user.role as string
+    };
+
+    next();
   } catch (error) {
-    const errorMessage = 
-      error instanceof Error ? error.message : 'Kimlik doğrulama hatası';
-    
-    return res.status(500).json({
-      success: false,
-      error: errorMessage
-    });
+    res.status(401).json({ message: 'Yetkilendirme başarısız' });
   }
 };
 
-/**
- * Request header'ındaki JWT token'ı doğrulayan ancak zorunlu tutmayan middleware.
- * İsteğe bağlı kimlik doğrulama için kullanılır.
- */
-export const optionalAuthenticateToken = async (
-  req: Request,
+// İsteğe bağlı kimlik doğrulama - token varsa doğrular, yoksa devam eder
+export const optionalAuthenticateUser = async (
+  req: ExpressRequest,
   _: Response,
   next: NextFunction
-) => {
+): Promise<void> => {
   try {
-    // Authorization header'dan token'ı al
-    const authHeader = req.headers.authorization;
+    const token = req.headers.authorization?.split(' ')[1];
     
-    // Token yoksa devam et
-    if (!authHeader) {
-      return next();
+    if (token) {
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+
+      if (!error && user) {
+        req.user = {
+          id: user.id as unknown as string,
+          role: user.role as string
+        };
+      }
     }
-    
-    // Bearer token'ı ayır
-    const token = authHeader.split(' ')[1];
-    
-    if (!token) {
-      return next();
-    }
-    
-    // Token'ı doğrula ve kullanıcı bilgisini al
-    const { data, error } = await supabase.auth.getUser(token);
-    
-    // Token geçerli değilse sessiz bir şekilde devam et
-    if (error || !data.user) {
-      return next();
-    }
-    
-    // Session bilgisini al
-    const { data: sessionData } = await supabase.auth.getSession();
-    
-    // Kullanıcı ve oturum bilgisini request'e ekle
-    req.user = data.user;
-    req.session = sessionData.session;
-    
+
     next();
   } catch (error) {
-    // Hata durumunda sessizce devam et
     next();
   }
 }; 

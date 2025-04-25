@@ -1,17 +1,29 @@
 import { Router } from 'express';
 import authController from '../controllers/auth.controller';
-import { authenticateToken } from '../middlewares/auth.middleware';
-import { register } from '../controllers/auth.controller';
+import { authenticateUser } from '../middlewares/auth.middleware';
+import { validateRequest } from '../middlewares/validation';
+import { 
+  loginSchema, 
+  registerSchema, 
+  resetPasswordSchema, 
+  updatePasswordSchema 
+} from '../validators/auth.validator';
 
 const router = Router();
 
 /**
  * @swagger
+ * tags:
+ *   name: Kimlik Doğrulama
+ *   description: Kullanıcı kimlik doğrulama endpoint'leri
+ */
+
+/**
+ * @swagger
  * /api/auth/register:
  *   post:
- *     tags: [Auth]
  *     summary: Yeni kullanıcı kaydı
- *     description: Yeni bir kullanıcı hesabı oluşturur
+ *     tags: [Kimlik Doğrulama]
  *     requestBody:
  *       required: true
  *       content:
@@ -19,114 +31,123 @@ const router = Router();
  *           schema:
  *             type: object
  *             required:
- *               - name
  *               - email
  *               - password
- *               - confirmPassword
+ *               - name
  *             properties:
- *               name:
- *                 type: string
- *                 minLength: 3
- *                 example: "Ahmet Yılmaz"
  *               email:
  *                 type: string
  *                 format: email
- *                 example: "ahmet@example.com"
  *               password:
  *                 type: string
- *                 minLength: 8
- *                 example: "Test123!@#"
- *               confirmPassword:
+ *                 minLength: 6
+ *               name:
  *                 type: string
- *                 example: "Test123!@#"
  *     responses:
  *       201:
  *         description: Kullanıcı başarıyla oluşturuldu
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: "Kayıt başarılı. Lütfen giriş yapınız."
- *                 userId:
- *                   type: string
- *                   example: "123e4567-e89b-12d3-a456-426614174000"
  *       400:
- *         description: Validasyon hatası
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "Validasyon hatası"
- *                 errors:
- *                   type: object
- *                   example:
- *                     email: "Geçerli bir e-posta adresi giriniz"
- *                     password: "Şifre en az 8 karakter olmalıdır"
- *       500:
- *         description: Sunucu hatası
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: false
- *                 message:
- *                   type: string
- *                   example: "Sunucu hatası"
- *                 errors:
- *                   type: object
- *                   example:
- *                     general: "Beklenmeyen bir hata oluştu"
+ *         description: Geçersiz istek
  */
-router.post('/register', register);
+router.post('/register', validateRequest(registerSchema), authController.register);
 
 /**
- * @route   POST /api/v1/auth/login
- * @desc    Kullanıcı girişi
- * @access  Public
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Kullanıcı girişi
+ *     tags: [Kimlik Doğrulama]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Giriş başarılı
+ *       401:
+ *         description: Kimlik doğrulama başarısız
  */
-router.post('/login', authController.login);
+router.post('/login', validateRequest(loginSchema), authController.login);
 
 /**
- * @route   POST /api/v1/auth/logout
- * @desc    Kullanıcı çıkışı
- * @access  Private
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Kullanıcı çıkışı
+ *     tags: [Kimlik Doğrulama]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Çıkış başarılı
+ *       401:
+ *         description: Yetkilendirme başarısız
  */
-router.post('/logout', authenticateToken, authController.logout);
+router.post('/logout', authenticateUser, authController.logout);
 
 /**
- * @route   GET /api/v1/auth/user
- * @desc    Mevcut kullanıcı bilgisini getir
- * @access  Private
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Şifre sıfırlama e-postası gönder
+ *     tags: [Kimlik Doğrulama]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Şifre sıfırlama e-postası gönderildi
+ *       400:
+ *         description: Geçersiz istek
  */
-router.get('/user', authenticateToken, authController.getUser);
+router.post('/reset-password', validateRequest(resetPasswordSchema), authController.resetPassword);
 
 /**
- * @route   POST /api/v1/auth/reset-password
- * @desc    Şifre sıfırlama e-postası gönder
- * @access  Public
+ * @swagger
+ * /api/auth/update-password:
+ *   post:
+ *     summary: Şifre güncelle
+ *     tags: [Kimlik Doğrulama]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - password
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *     responses:
+ *       200:
+ *         description: Şifre başarıyla güncellendi
+ *       401:
+ *         description: Yetkilendirme başarısız
  */
-router.post('/reset-password', authController.resetPassword);
-
-/**
- * @route   POST /api/v1/auth/update-password
- * @desc    Şifre güncelleme
- * @access  Private
- */
-router.post('/update-password', authenticateToken, authController.updatePassword);
+router.post('/update-password', authenticateUser, validateRequest(updatePasswordSchema), authController.updatePassword);
 
 export default router; 

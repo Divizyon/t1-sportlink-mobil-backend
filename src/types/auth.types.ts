@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AnyZodObject, ZodError } from 'zod';
+import { User, Session } from '@supabase/supabase-js';
 
 export const validateRequest = (schema: AnyZodObject) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -31,20 +32,42 @@ export interface LoginRequest {
   password: string;
 }
 
-export interface User {
-  id: string;
-  username: string;
+export interface RegisterRequest {
   email: string;
+  password: string;
   name: string;
-  avatar: string;
-  role: string;
 }
 
 export interface LoginResponse {
   success: boolean;
   token: string;
-  user: User;
+  user: {
+    id: string;
+    email: string;
+    username: string;
+    name: string;
+    avatar: string;
+    role: string;
+  };
 }
+
+export interface AuthResponse {
+  user: User;
+  session: Session;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+}
+
+export interface UpdatePasswordRequest {
+  password: string;
+}
+
+export type RegisterCredentials = RegisterRequest;
+export type LoginCredentials = LoginRequest;
+export type ResetPasswordCredentials = ResetPasswordRequest;
+export type UpdatePasswordCredentials = UpdatePasswordRequest;
 
 export interface AuthError {
   success: boolean;
