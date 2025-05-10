@@ -34,11 +34,11 @@ dotenv.config({ override: true });
 // Initialize express app
 const app = express();
 const server = http.createServer(app);
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // CORS options
 const corsOptions = {
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  origin: '*', // Tüm alanlardan gelen isteklere izin ver
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   credentials: true,
@@ -70,8 +70,10 @@ setupSwagger(app);
 // Veritabanı bağlantı kontrolü middleware'ini ekle
 app.use(dbConnectionCheck);
 
-// Socket.IO başlat
-initializeSocket(server);
+// Socket.IO başlat (sadece geliştirme ortamında)
+if (process.env.NODE_ENV === 'development') {
+  initializeSocket(server);
+}
 
 // Özel yönlendirmeler - /auth/* route'larını /api/auth/* 'a yönlendir
 app.use('/auth/:path', (req, res) => {
@@ -109,7 +111,12 @@ app.use('/api/mobile/notifications', mobileNotificationRoutes);
 // Error handling middleware
 app.use(errorHandler);
 
-// Server başlatılmadan önce veritabanı bağlantısını ısıt
+// Sağlık kontrolü endpoint'i
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', environment: process.env.NODE_ENV });
+});
+
+// Server başlatma fonksiyonu
 const startServer = async () => {
   try {
     // Bağlantı havuzunu ısıt
@@ -118,30 +125,50 @@ const startServer = async () => {
     // Storage bucket'ları yapılandır
     await setupStorageBuckets();
     
-    // Sunucuyu başlat (app.listen yerine server.listen kullanıyoruz)
-    server.listen(port, () => {
-      console.log(`Server running on port ${port}`);
-      console.log(`API Documentation available at http://localhost:${port}/api-docs`);
+    // Eğer production ortamında değilsek, HTTP sunucusu başlat
+    if (process.env.NODE_ENV !== 'production') {
+      server.listen(port, () => {
+        console.log(`Server running on port ${port}`);
+        console.log(`API Documentation available at http://localhost:${port}/api-docs`);
+        
+        // Zamanlayıcı işlerini başlat
+        scheduleCompletedEventsJob();
+        scheduleAutoRejectEventsJob();
+        console.log('Scheduled jobs started');
+      });
       
-      // Zamanlayıcı işlerini başlat
-      scheduleCompletedEventsJob();
-      scheduleAutoRejectEventsJob();
-      console.log('Scheduled jobs started');
-    });
+      // Haber süresi kontrol servisini başlat
+      newsExpiryChecker.start();
+    }
     
-    // Haber süresi kontrol servisini başlat
-    newsExpiryChecker.start();
-    
-    return server;
+    return app;
   } catch (error) {
     console.error('Server başlatma hatası:', error);
+    // Vercel'de hataya rağmen uygulama çalışsın
+    if (process.env.NODE_ENV === 'production') {
+      console.error('Vercel üzerinde hata, ancak çalışmaya devam ediliyor');
+      return app;
+    }
     process.exit(1);
   }
 };
 
-// Server'ı başlat
-startServer()
-  .then(() => console.log('Server başarıyla başlatıldı'))
-  .catch(err => console.error('Server başlatılamadı:', err));
+// Vercel için export ettiğimiz modül
+if (process.env.NODE_ENV === 'production') {
+  // Başlatma adımları
+  (async () => {
+    try {
+      await warmupConnectionPool();
+      await setupStorageBuckets();
+    } catch (error) {
+      console.error('Vercel başlangıç hatası:', error);
+    }
+  })();
+} else {
+  // Server'ı başlat (geliştirme ortamı için)
+  startServer()
+    .then(() => console.log('Server başarıyla başlatıldı'))
+    .catch(err => console.error('Server başlatılamadı:', err));
+}
 
 export default app;
