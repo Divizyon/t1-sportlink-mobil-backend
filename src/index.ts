@@ -100,9 +100,11 @@ app.use('/api/warnings', warningRoutes);
 // Mobil API Routes
 import mobileFriendshipRoutes from './routes/friendshipRoutes';
 import mobileMessageRoutes from './routes/messageRoutes';
+import mobileNotificationRoutes from './routes/mobileNotificationRoutes';
 
 app.use('/api/mobile/friendships', mobileFriendshipRoutes);
 app.use('/api/mobile/messages', mobileMessageRoutes);
+app.use('/api/mobile/notifications', mobileNotificationRoutes);
 
 // Error handling middleware
 app.use(errorHandler);

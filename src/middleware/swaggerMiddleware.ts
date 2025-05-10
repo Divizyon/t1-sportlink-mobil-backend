@@ -37,361 +37,50 @@ export const setupSwagger = (app: Express): void => {
         { name: 'Profile', description: 'Kullanıcı profil yönetimi' },
         { name: 'Users', description: 'User management operations' },
         { name: 'Sports', description: 'Spor yönetimi' },
-        { name: 'Stats', description: 'İstatistik ve dashboard verileri' },
         { name: 'Announcements', description: 'Duyuru yönetimi' },
         { name: 'Mobile Notifications', description: 'Mobil bildirim yönetimi' },
         { name: 'UserNews', description: 'Kullanıcı haberleri işlemleri' },
       ],
       paths: {
         '/api/stats/weekly': {
-          get: {
-            tags: ['Stats'],
-            summary: 'Haftalık istatistikleri getirir',
-            description: 'Son 7 gün için günlük etkinlik ve katılımcı sayılarını ve genel özeti döndürür.',
-            security: [{ bearerAuth: [] }],
-            responses: {
-              '200': {
-                description: 'Haftalık istatistikler başarıyla alındı',
-                content: {
-                  'application/json': {
-                    schema: {
-                      $ref: '#/components/schemas/WeeklyStatsResponse'
-                    }
-                  }
-                }
-              },
-              '401': { $ref: '#/components/responses/UnauthorizedError' },
-              '403': { $ref: '#/components/responses/ForbiddenError' },
-              '500': { $ref: '#/components/responses/InternalServerError' }
-            }
-          }
+          // Stats API endpoints have been removed from Swagger documentation
+          // They are still available in the codebase but not displayed in Swagger
         },
         '/api/stats/categories': {
-          get: {
-            tags: ['Stats'],
-            summary: 'Kategoriye göre katılımcı dağılımını getirir',
-            description: 'Her spor kategorisindeki etkinliklere katılan benzersiz kullanıcı sayısını döndürür.',
-            security: [{ bearerAuth: [] }],
-            responses: {
-              '200': {
-                description: 'Kategori dağılımı başarıyla alındı',
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'array',
-                      items: {
-                        $ref: '#/components/schemas/CategoryDistributionItem'
-                      }
-                    }
-                  }
-                }
-              },
-              '401': { $ref: '#/components/responses/UnauthorizedError' },
-              '403': { $ref: '#/components/responses/ForbiddenError' },
-              '500': { $ref: '#/components/responses/InternalServerError' }
-            }
-          }
+          // Stats API endpoints have been removed from Swagger documentation
+          // They are still available in the codebase but not displayed in Swagger
         },
         '/api/stats/monthly': {
-          get: {
-            tags: ['Stats'],
-            summary: 'Aylık etkinlik istatistiklerini getirir',
-            description: 'Her ay için etkinlikleri durumlarına göre sayarak döndürür.',
-            security: [{ bearerAuth: [] }],
-            responses: {
-              '200': {
-                description: 'Aylık istatistikler başarıyla alındı',
-                content: {
-                  'application/json': {
-                    schema: {
-                       type: 'array',
-                       items: {
-                         $ref: '#/components/schemas/MonthlyStatsItem'
-                      }
-                    }
-                  }
-                }
-              },
-              '401': { $ref: '#/components/responses/UnauthorizedError' },
-              '403': { $ref: '#/components/responses/ForbiddenError' },
-              '500': { $ref: '#/components/responses/InternalServerError' }
-            }
-          }
+          // Stats API endpoints have been removed from Swagger documentation
+          // They are still available in the codebase but not displayed in Swagger
         },
         '/api/stats/users/categories': {
-          get: {
-            tags: ['Stats'],
-            summary: 'Kategoriye göre kullanıcı büyümesini getirir',
-            description: 'Her spor kategorisi için toplam kullanıcı sayısını ve son 30 gündeki artışı döndürür.',
-            security: [{ bearerAuth: [] }],
-            responses: {
-              '200': {
-                description: 'Kullanıcı kategori büyümesi başarıyla alındı',
-                content: {
-                  'application/json': {
-                    schema: {
-                       $ref: '#/components/schemas/UserCategoryGrowthResponse'
-                    }
-                  }
-                }
-              },
-              '401': { $ref: '#/components/responses/UnauthorizedError' },
-              '403': { $ref: '#/components/responses/ForbiddenError' },
-              '500': { $ref: '#/components/responses/InternalServerError' }
-            }
-          }
+          // Stats API endpoints have been removed from Swagger documentation
+          // They are still available in the codebase but not displayed in Swagger
         },
         '/api/notifications': {
-          get: {
-            tags: ['Notifications'],
-            summary: 'Kullanıcı bildirimlerini listele',
-            description: 'Oturum açmış kullanıcının bildirimlerini filtreli bir şekilde listeler',
-            security: [{ bearerAuth: [] }],
-            parameters: [
-              {
-                in: 'query',
-                name: 'read_status',
-                schema: {
-                  type: 'string',
-                  enum: ['all', 'read', 'unread']
-                },
-                description: 'Bildirim okunma durumu filtresi',
-                default: 'all'
-              },
-              {
-                in: 'query',
-                name: 'limit',
-                schema: {
-                  type: 'integer',
-                  default: 10
-                },
-                description: 'Sayfa başına gösterilecek bildirim sayısı'
-              },
-              {
-                in: 'query',
-                name: 'offset',
-                schema: {
-                  type: 'integer',
-                  default: 0
-                },
-                description: 'Sayfalama için atlanacak bildirim sayısı'
-              }
-            ],
-            responses: {
-              '200': {
-                description: 'Bildirimler başarıyla getirildi',
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'object',
-                      properties: {
-                        status: { type: 'string', example: 'success' },
-                        count: { type: 'integer', example: 5 },
-                        data: {
-                          type: 'array',
-                          items: {
-                            $ref: '#/components/schemas/Notification'
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              },
-              '401': { $ref: '#/components/responses/UnauthorizedError' },
-              '500': { $ref: '#/components/responses/InternalServerError' }
-            }
-          }
+          // Admin notification API endpoints have been removed from the codebase
+          // They were previously defined here but are no longer active
         },
         '/api/notifications/unread-count': {
-          get: {
-            tags: ['Notifications'],
-            summary: 'Okunmamış bildirim sayısını al',
-            description: 'Oturum açmış kullanıcının okunmamış bildirim sayısını döndürür',
-            security: [{ bearerAuth: [] }],
-            responses: {
-              '200': {
-                description: 'Okunmamış bildirim sayısı başarıyla getirildi',
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'object',
-                      properties: {
-                        status: { type: 'string', example: 'success' },
-                        count: { type: 'integer', example: 3 }
-                      }
-                    }
-                  }
-                }
-              },
-              '401': { $ref: '#/components/responses/UnauthorizedError' },
-              '500': { $ref: '#/components/responses/InternalServerError' }
-            }
-          }
+          // Admin notification API endpoints have been removed from the codebase
+          // They were previously defined here but are no longer active
         },
         '/api/notifications/{id}/read': {
-          put: {
-            tags: ['Notifications'],
-            summary: 'Bildirimi okundu olarak işaretle',
-            description: 'Belirli bir bildirimi okundu olarak işaretler',
-            security: [{ bearerAuth: [] }],
-            parameters: [
-              {
-                in: 'path',
-                name: 'id',
-                required: true,
-                schema: {
-                  type: 'integer'
-                },
-                description: 'Okundu olarak işaretlenecek bildirim ID'
-              }
-            ],
-            responses: {
-              '200': {
-                description: 'Bildirim başarıyla okundu olarak işaretlendi',
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'object',
-                      properties: {
-                        status: { type: 'string', example: 'success' },
-                        data: { $ref: '#/components/schemas/Notification' }
-                      }
-                    }
-                  }
-                }
-              },
-              '401': { $ref: '#/components/responses/UnauthorizedError' },
-              '404': { $ref: '#/components/responses/NotFoundError' },
-              '500': { $ref: '#/components/responses/InternalServerError' }
-            }
-          }
+          // Admin notification API endpoints have been removed from the codebase
+          // They were previously defined here but are no longer active
         },
         '/api/notifications/mark-all-read': {
-          put: {
-            tags: ['Notifications'],
-            summary: 'Tüm bildirimleri okundu olarak işaretle',
-            description: 'Kullanıcının tüm bildirimlerini okundu olarak işaretler',
-            security: [{ bearerAuth: [] }],
-            responses: {
-              '200': {
-                description: 'Tüm bildirimler başarıyla okundu olarak işaretlendi',
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'object',
-                      properties: {
-                        status: { type: 'string', example: 'success' },
-                        affected: { type: 'integer', example: 5 }
-                      }
-                    }
-                  }
-                }
-              },
-              '401': { $ref: '#/components/responses/UnauthorizedError' },
-              '500': { $ref: '#/components/responses/InternalServerError' }
-            }
-          }
+          // Admin notification API endpoints have been removed from the codebase
+          // They were previously defined here but are no longer active
         },
         '/api/notifications/{id}': {
-          delete: {
-            tags: ['Notifications'],
-            summary: 'Bildirimi sil',
-            description: 'Belirli bir bildirimi siler',
-            security: [{ bearerAuth: [] }],
-            parameters: [
-              {
-                in: 'path',
-                name: 'id',
-                required: true,
-                schema: {
-                  type: 'integer'
-                },
-                description: 'Silinecek bildirim ID'
-              }
-            ],
-            responses: {
-              '200': {
-                description: 'Bildirim başarıyla silindi',
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'object',
-                      properties: {
-                        status: { type: 'string', example: 'success' },
-                        message: { type: 'string', example: 'Bildirim silindi' }
-                      }
-                    }
-                  }
-                }
-              },
-              '401': { $ref: '#/components/responses/UnauthorizedError' },
-              '404': { $ref: '#/components/responses/NotFoundError' },
-              '500': { $ref: '#/components/responses/InternalServerError' }
-            }
-          }
+          // Admin notification API endpoints have been removed from the codebase
+          // They were previously defined here but are no longer active
         },
         '/api/notifications/test': {
-          post: {
-            tags: ['Notifications'],
-            summary: 'Test bildirimi oluştur',
-            description: 'Test amaçlı bir bildirim oluşturur (isteğe bağlı olarak user_id belirtilebilir, belirtilmezse oturum açan kullanıcı için oluşturulur)',
-            security: [{ bearerAuth: [] }],
-            requestBody: {
-              required: true,
-              content: {
-                'application/json': {
-                  schema: {
-                    type: 'object',
-                    required: ['notification_type', 'content'],
-                    properties: {
-                      user_id: {
-                        type: 'string',
-                        format: 'uuid',
-                        description: 'İsteğe bağlı bildirim gönderilecek kullanıcı ID (belirtilmezse oturum açan kullanıcı için oluşturulur)'
-                      },
-                      notification_type: {
-                        type: 'string',
-                        enum: ['EVENT_INVITATION', 'EVENT_UPDATE', 'FRIEND_REQUEST', 'SYSTEM_NOTIFICATION', 'NEW_MESSAGE'],
-                        description: 'Bildirim tipi'
-                      },
-                      content: {
-                        type: 'string',
-                        description: 'Bildirim içeriği'
-                      },
-                      link: {
-                        type: 'string',
-                        description: 'Bildirime tıklandığında yönlendirilecek bağlantı'
-                      },
-                      event_id: {
-                        type: 'integer',
-                        description: 'İlgili etkinlik ID (varsa)'
-                      }
-                    }
-                  }
-                }
-              }
-            },
-            responses: {
-              '201': {
-                description: 'Test bildirimi başarıyla oluşturuldu',
-                content: {
-                  'application/json': {
-                    schema: {
-                      type: 'object',
-                      properties: {
-                        status: { type: 'string', example: 'success' },
-                        message: { type: 'string', example: 'Test bildirimi oluşturuldu' },
-                        data: { $ref: '#/components/schemas/Notification' }
-                      }
-                    }
-                  }
-                }
-              },
-              '401': { $ref: '#/components/responses/UnauthorizedError' },
-              '500': { $ref: '#/components/responses/InternalServerError' }
-            }
-          }
+          // Admin notification API endpoints have been removed from the codebase
+          // They were previously defined here but are no longer active
         },
         // Mobil Bildirim API'leri
         '/api/mobile/notifications/register-device': {

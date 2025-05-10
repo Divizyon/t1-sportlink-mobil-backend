@@ -4,7 +4,6 @@ import logger from '../utils/logger';
 
 /**
  * Kullanıcının tüm uyarı mesajlarını getirir
- * @route GET /api/warnings
  */
 export const getUserWarnings = async (req: Request, res: Response) => {
   try {
@@ -29,7 +28,6 @@ export const getUserWarnings = async (req: Request, res: Response) => {
 
 /**
  * Uyarı mesajını okundu olarak işaretler
- * @route PATCH /api/warnings/:warningId/read
  */
 export const markWarningAsRead = async (req: Request, res: Response) => {
   try {
@@ -55,7 +53,6 @@ export const markWarningAsRead = async (req: Request, res: Response) => {
 
 /**
  * Kullanıcının okunmamış uyarı sayısını getirir
- * @route GET /api/warnings/unread/count
  */
 export const getUnreadWarningsCount = async (req: Request, res: Response) => {
   try {
