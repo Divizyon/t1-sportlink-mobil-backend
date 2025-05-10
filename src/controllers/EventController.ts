@@ -1307,7 +1307,8 @@ export const getUserCreatedEvents = async (req: Request, res: Response) => {
 
 export const getNearbyEvents = async (req: Request, res: Response) => {
   try {
-    const { latitude, longitude, distance = 1 } = req.query;
+    // Mevcut parametreleri al
+    const { latitude, longitude, distance = 1, date, sport_id } = req.query;
     
     // Üretim ortamı için test modu kapalı
     const SWAGGER_TEST_MODE = false; // Üretim ortamında false olmalıdır
@@ -1346,14 +1347,93 @@ export const getNearbyEvents = async (req: Request, res: Response) => {
       });
     }
     
-    const events = await eventService.getNearbyEvents(userLat, userLng, searchRadius);
+    // Supabase sorgusu
+    const { data, error } = await supabaseAdmin
+      .from('Events')
+      .select(`
+        *,
+        users!Events_creator_id_fkey(id, first_name, last_name, profile_picture), 
+        Sports!Events_sport_id_fkey(id, name, icon),
+        participants:Event_Participants(count)
+      `)
+      .eq('status', 'ACTIVE');
+    
+    if (error) {
+      logger.error('Nearby API hatası:', error instanceof Error ? error.message : 'Bilinmeyen hata');
+      handleError(error as Error, res);
+      return;
+    }
+    
+    // Etkinlikleri map et, mesafe hesapla...
+    const eventsWithData = data.map(event => {
+      // Haversine formülü ile mesafe hesaplama
+      const eventLat = event.location_latitude;
+      const eventLng = event.location_longitude;
+      
+      let distance_km = Infinity;
+      if (eventLat && eventLng) {
+        // Dünya yarıçapı (km)
+        const R = 6371;
+        
+        // Dereceyi radyana çevirme
+        const lat1 = userLat * Math.PI / 180;
+        const lat2 = eventLat * Math.PI / 180;
+        const deltaLat = (eventLat - userLat) * Math.PI / 180;
+        const deltaLng = (eventLng - userLng) * Math.PI / 180;
+        
+        // Haversine formülü
+        const a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
+                  Math.cos(lat1) * Math.cos(lat2) * 
+                  Math.sin(deltaLng/2) * Math.sin(deltaLng/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        distance_km = R * c;
+      }
+      
+      return {
+        ...event,
+        distance_km,
+        creator: event.users,
+        sport: event.Sports,
+        participant_count: event.participants?.[0]?.count || 0
+      };
+    });
+    
+    // Filtreleme ve sıralama
+    const filteredEvents = eventsWithData
+      // Mesafe filtresi
+      .filter(event => event.distance_km <= searchRadius)
+      // Tarih filtresi (eğer varsa)
+      .filter(event => {
+        // date parametresi yoksa, tüm etkinlikleri kabul et
+        if (!date) return true;
+        
+        // Etkinlik tarihi ve seçilen tarihi karşılaştır
+        const selectedDate = new Date(date as string);
+        const eventDate = new Date(event.start_time);
+        
+        // Aynı gün kontrolü: yıl, ay ve gün değerlerini karşılaştır
+        return (
+          eventDate.getFullYear() === selectedDate.getFullYear() &&
+          eventDate.getMonth() === selectedDate.getMonth() &&
+          eventDate.getDate() === selectedDate.getDate()
+        );
+      })
+      // Spor filtresi (eğer varsa)
+      .filter(event => {
+        // sport_id parametresi yoksa, tüm etkinlikleri kabul et
+        if (!sport_id) return true;
+        
+        // Spor ID'sini karşılaştır - string veya number olabilir
+        return event.sport_id === Number(sport_id);
+      })
+      // Mesafeye göre sırala
+      .sort((a, b) => a.distance_km - b.distance_km);
     
     res.status(200).json({
       status: 'success',
-      results: events.length,
-      data: { events }
+      results: filteredEvents.length,
+      data: { events: filteredEvents }
     });
-    
   } catch (error) {
     console.error('Nearby API hatası:', error instanceof Error ? error.message : 'Bilinmeyen hata');
     handleError(error as Error, res);
