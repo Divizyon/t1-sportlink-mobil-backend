@@ -13,18 +13,48 @@ const app = express();
 app.use(cors({ origin: '*' }));
 app.use(express.json());
 
-// Supabase connection
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+// Debug endpoint to check environment variables
+app.get('/debug', (req, res) => {
+  // Güvenlik için sadece kısmen göster
+  const supabaseUrlPartial = process.env.SUPABASE_URL 
+    ? `${process.env.SUPABASE_URL.substring(0, 8)}...` 
+    : 'not set';
+  
+  const supabaseKeyExists = process.env.SUPABASE_KEY ? 'exists' : 'not set';
+  
+  res.status(200).json({
+    environment: process.env.NODE_ENV || 'not set',
+    supabaseUrl: supabaseUrlPartial,
+    supabaseKeyExists: supabaseKeyExists,
+    timestamp: new Date().toISOString(),
+    allEnvKeys: Object.keys(process.env).filter(key => !key.includes('SECRET')).join(', ')
+  });
+});
 
-// Initialize Supabase client
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Create Supabase client only if URL and key are available
+let supabase = null;
+try {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+  
+  if (supabaseUrl && supabaseKey) {
+    // Validate URL format
+    new URL(supabaseUrl); // This will throw if URL is invalid
+    supabase = createClient(supabaseUrl, supabaseKey);
+    console.log('Supabase client initialized successfully');
+  } else {
+    console.error('Missing Supabase URL or key. Client not initialized.');
+  }
+} catch (error) {
+  console.error('Error initializing Supabase client:', error.message);
+}
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'ok', 
-    environment: process.env.NODE_ENV,
+    environment: process.env.NODE_ENV || 'not set',
+    supabaseInitialized: !!supabase,
     timestamp: new Date().toISOString()
   });
 });
@@ -34,6 +64,7 @@ app.get('/', (req, res) => {
   res.status(200).json({ 
     message: 'Sportlink API is running', 
     version: '1.0.0',
+    supabaseInitialized: !!supabase,
     timestamp: new Date().toISOString()
   });
 });
@@ -41,6 +72,13 @@ app.get('/', (req, res) => {
 // Simple test endpoint to verify Supabase connection
 app.get('/api/test-connection', async (req, res) => {
   try {
+    if (!supabase) {
+      return res.status(500).json({
+        error: 'Supabase client not initialized',
+        message: 'Environment variables may be missing or invalid'
+      });
+    }
+    
     const { data, error } = await supabase.from('sports').select('*').limit(1);
     
     if (error) {
