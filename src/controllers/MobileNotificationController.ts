@@ -72,8 +72,25 @@ export class MobileNotificationController {
       
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 20;
       const offset = req.query.offset ? parseInt(req.query.offset as string) : 0;
-      const readStatus = req.query.read_status === 'true' ? true : 
-                         req.query.read_status === 'false' ? false : undefined;
+      
+      // read_status parametresini daha esnek bir şekilde işle
+      let readStatus: boolean | undefined = undefined;
+      if (req.query.read_status !== undefined && req.query.read_status !== '') {
+        // String kontrolü
+        if (req.query.read_status === 'true' || req.query.read_status === 'false') {
+          readStatus = req.query.read_status === 'true';
+        } 
+        // Boolean kontrolü
+        else if (typeof req.query.read_status === 'boolean') {
+          readStatus = req.query.read_status;
+        }
+        // Sayı kontrolü (1 veya 0)
+        else if (req.query.read_status === '1' || req.query.read_status === '0') {
+          readStatus = req.query.read_status === '1';
+        }
+      }
+      
+      logger.info(`Bildirimler getiriliyor - userId: ${userId}, limit: ${limit}, offset: ${offset}, readStatus: ${readStatus}`);
       
       const { data, count } = await this.mobileNotificationService.getUserNotifications(
         userId, 

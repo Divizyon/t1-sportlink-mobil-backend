@@ -5,7 +5,6 @@ import { SecurityLogFilters, CreateSecurityLogDTO } from '../models/SecurityLog'
 export const SecurityController = {
   /**
    * Güvenlik loglarını getir (filtreleme ve sayfalama destekli)
-   * @route GET /api/security/logs
    */
   async getLogs(req: Request, res: Response) {
     try {
@@ -53,7 +52,6 @@ export const SecurityController = {
   
   /**
    * Yeni bir güvenlik logu oluştur
-   * @route POST /api/security/logs
    */
   async createLog(req: Request, res: Response) {
     try {
@@ -96,7 +94,6 @@ export const SecurityController = {
   
   /**
    * Güvenlik logunu sil (sadece admin yetkisi ile)
-   * @route DELETE /api/security/logs/:id
    */
   async deleteLog(req: Request, res: Response) {
     try {

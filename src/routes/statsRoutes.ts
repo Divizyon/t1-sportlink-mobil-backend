@@ -5,7 +5,7 @@ import { protect } from '../middleware/authMiddleware'; // Changed import to pro
 
 const router = Router();
 
-// GET /api/stats/weekly - Fetch weekly statistics
+// GET /api/stats/weekly - Fetch weekly statistics (Swagger'dan kaldırıldı)
 // Add authentication middleware
 router.get(
     '/weekly',
@@ -13,7 +13,7 @@ router.get(
     StatsController.getWeeklyStats
 );
 
-// GET /api/stats/categories - Fetch category distribution
+// GET /api/stats/categories - Fetch category distribution (Swagger'dan kaldırıldı)
 // Add authentication middleware
 router.get(
     '/categories',
@@ -21,7 +21,7 @@ router.get(
     StatsController.getCategoryDistribution
 );
 
-// GET /api/stats/monthly - Fetch monthly statistics
+// GET /api/stats/monthly - Fetch monthly statistics (Swagger'dan kaldırıldı)
 // Activate the route and add protection
 router.get(
     '/monthly',
@@ -29,7 +29,7 @@ router.get(
     StatsController.getMonthlyStats
 );
 
-// GET /api/stats/users/categories - Fetch user category growth
+// GET /api/stats/users/categories - Fetch user category growth (Swagger'dan kaldırıldı)
 // Activate the route and add protection
 router.get(
     '/users/categories',

@@ -176,13 +176,20 @@ export const toggleUserStatusController = async (req: Request, res: Response) =>
 
 export const deleteUserController = async (req: Request, res: Response) => {
   try {
-    const { userId } = req.params;
+    const { userId } = req.body;
     const adminId = req.user?.id;
 
     if (!adminId) {
       return res.status(401).json({ 
         error: 'Yetkilendirme başarısız',
         message: 'Bu işlemi gerçekleştirmek için giriş yapmalısınız' 
+      });
+    }
+    
+    if (!userId) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Silinecek kullanıcı ID\'si belirtilmelidir'
       });
     }
 
