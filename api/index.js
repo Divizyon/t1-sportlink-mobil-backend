@@ -4,7 +4,7 @@ const { createClient } = require('@supabase/supabase-js');
 const cors = require('cors');
 const dotenv = require('dotenv');
 
-// Load environment variables 
+// Load environment variables
 dotenv.config();
 
 const app = express();
@@ -15,76 +15,63 @@ app.use(express.json());
 
 // Debug endpoint to check environment variables
 app.get('/debug', (req, res) => {
-  // Güvenlik için sadece kısmen göster
-  const supabaseUrlPartial = process.env.SUPABASE_URL 
-    ? `${process.env.SUPABASE_URL.substring(0, 8)}...` 
-    : 'not set';
-  
-  const supabaseKeyExists = process.env.SUPABASE_KEY ? 'exists' : 'not set';
-  
   res.status(200).json({
     environment: process.env.NODE_ENV || 'not set',
-    supabaseUrl: supabaseUrlPartial,
-    supabaseKeyExists: supabaseKeyExists,
+    supabaseUrlExists: !!process.env.SUPABASE_URL,
+    supabaseKeyExists: !!process.env.SUPABASE_KEY,
     timestamp: new Date().toISOString(),
-    allEnvKeys: Object.keys(process.env).filter(key => !key.includes('SECRET')).join(', ')
+    envKeys: Object.keys(process.env).join(', ')
   });
 });
-
-// Create Supabase client only if URL and key are available
-let supabase = null;
-try {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_KEY;
-  
-  if (supabaseUrl && supabaseKey) {
-    // Validate URL format
-    new URL(supabaseUrl); // This will throw if URL is invalid
-    supabase = createClient(supabaseUrl, supabaseKey);
-    console.log('Supabase client initialized successfully');
-  } else {
-    console.error('Missing Supabase URL or key. Client not initialized.');
-  }
-} catch (error) {
-  console.error('Error initializing Supabase client:', error.message);
-}
 
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'ok', 
-    environment: process.env.NODE_ENV || 'not set',
-    supabaseInitialized: !!supabase,
     timestamp: new Date().toISOString()
   });
 });
 
-// Root endpoint to check if the API is running
+// Root endpoint
 app.get('/', (req, res) => {
   res.status(200).json({ 
     message: 'Sportlink API is running', 
     version: '1.0.0',
-    supabaseInitialized: !!supabase,
     timestamp: new Date().toISOString()
   });
 });
 
-// Simple test endpoint to verify Supabase connection
+// No Supabase initialization at the module level
+// We'll initialize it on demand in the test endpoint
+
+// Test endpoint for Supabase connection
 app.get('/api/test-connection', async (req, res) => {
   try {
-    if (!supabase) {
+    // Get credentials from environment variables
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_KEY;
+    
+    // Check if credentials exist
+    if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({
-        error: 'Supabase client not initialized',
-        message: 'Environment variables may be missing or invalid'
+        error: 'Missing Supabase credentials',
+        urlExists: !!supabaseUrl,
+        keyExists: !!supabaseKey
       });
     }
     
+    // Log the URL for debugging (first few chars only)
+    console.log('Supabase URL format:', supabaseUrl.substring(0, 12) + '...');
+    
+    // Try to create client
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Try to query the database
     const { data, error } = await supabase.from('sports').select('*').limit(1);
     
     if (error) {
-      console.error('Supabase error:', error);
       return res.status(500).json({ 
-        error: 'Database connection error', 
+        error: 'Database query error', 
         details: error.message 
       });
     }
@@ -98,7 +85,8 @@ app.get('/api/test-connection', async (req, res) => {
     console.error('Server error:', err);
     return res.status(500).json({ 
       error: 'Server error', 
-      details: err.message 
+      details: err.message,
+      stack: err.stack
     });
   }
 });
