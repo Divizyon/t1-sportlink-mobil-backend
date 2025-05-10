@@ -1,101 +1,126 @@
-# SportLink Mobil Backend
+# Sportlink Web Backend
 
-Bu proje, SportLink mobil uygulaması için RESTful API backend hizmetini sağlar.
+Bu proje, Sportlink web uygulamasının backend kısmıdır. TypeScript ve Supabase kullanılarak geliştirilmiştir.
 
 ## Teknolojiler
 
 - Node.js
 - Express.js
 - TypeScript
-- PostgreSQL
+- Supabase (PostgreSQL + Auth)
+- Jest (Test)
 - Docker
+- Swagger/OpenAPI (API Dokümantasyonu)
 
 ## Kurulum
 
-### Gereksinimler
-
-- Node.js (v16+)
-- npm veya yarn
-- PostgreSQL (veya Docker)
-
-### Adımlar
-
-1. Repoyu klonlayın:
-   ```bash
-   git clone https://github.com/your-username/t2-sportlink-mobil-backend.git
-   cd t2-sportlink-mobil-backend
-   ```
+1. Projeyi klonlayın:
+```bash
+git clone https://github.com/Divizyon/t1-sportlink-web-backend.git
+cd sportlink-web-backend
+```
 
 2. Bağımlılıkları yükleyin:
-   ```bash
-   npm install
-   # veya
-   yarn install
-   ```
+```bash
+npm install
+```
 
-3. Çevre değişkenlerini ayarlayın:
-   ```bash
-   cp .env.example .env
-   # .env dosyasını düzenleyin
-   ```
+3. `.env` dosyasını oluşturun ve gerekli değişkenleri ayarlayın:
+```
+PORT=3000
+NODE_ENV=development
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_key
+SUPABASE_SERVICE_KEY=your_supabase_service_key
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRES_IN=3600
+FRONTEND_URL=http://localhost:5173
+```
 
 4. Geliştirme modunda çalıştırın:
-   ```bash
-   npm run dev
-   # veya
-   yarn dev
-   ```
+```bash
+npm run dev
+```
 
-## Kullanım
+## Docker ile Çalıştırma
 
-API, varsayılan olarak `http://localhost:3000/api/v1` adresinde çalışır.
+1. Docker Desktop'ı yükleyin ve çalıştırın.
 
-### API Endpointleri
+2. Container'ı oluşturup çalıştırın:
+```bash
+docker-compose up
+```
 
-- `GET /api/v1/health` - API sağlık kontrolü
-- `POST /api/v1/auth/register` - Kullanıcı kaydı
-- `POST /api/v1/auth/login` - Kullanıcı girişi
-- `GET /api/v1/users` - Kullanıcıları listele
-- `GET /api/v1/users/:id` - Kullanıcı detaylarını getir
+3. Arka planda çalıştırmak için:
+```bash
+docker-compose up -d
+```
 
-Daha fazla bilgi için API dokümantasyonuna bakın.
+4. Container'ı durdurmak için:
+```bash
+docker-compose down
+```
 
-## Geliştirme
+5. Production build için:
+```bash
+docker build -t sportlink-web-backend .
+docker run -p 3000:3000 sportlink-web-backend
+```
 
-### Komutlar
-
-- `npm run dev` - Geliştirme sunucusunu başlatır
-- `npm run build` - Projeyi derler
-- `npm start` - Derlenmiş uygulamayı çalıştırır
-- `npm run lint` - Kod kalitesini kontrol eder
-- `npm run format` - Kodu formatlar
-- `npm test` - Testleri çalıştırır
-
-### Klasör Yapısı
+## Klasör Yapısı
 
 ```
 src/
 ├── config/         # Yapılandırma dosyaları
 ├── controllers/    # İstek işleyicileri
-├── middlewares/    # Express ara yazılımları
+├── middleware/     # Ara yazılımlar
 ├── models/         # Veri modelleri
-├── routes/         # Rota tanımları
+├── routes/         # API rotaları
 ├── services/       # İş mantığı
-├── types/          # TypeScript tip tanımları
 ├── utils/          # Yardımcı fonksiyonlar
-└── app.ts          # Express uygulama kurulumu
+└── index.ts        # Uygulama giriş noktası
 ```
 
-## Docker ile Çalıştırma
+## API Rotaları
 
-```bash
-# Docker imajını oluşturun
-docker build -t sportlink-backend .
+### Kimlik Doğrulama
+- `POST /api/auth/register` - Yeni kullanıcı kaydı
+- `POST /api/auth/login` - Kullanıcı girişi
+- `POST /api/auth/logout` - Kullanıcı çıkışı
+- `GET /api/auth/me` - Mevcut kullanıcı bilgilerini getir
+- `POST /api/auth/reset-password` - Şifre sıfırlama
 
-# Konteyneri çalıştırın
-docker run -p 3000:3000 sportlink-backend
+### Kullanıcılar
+- `GET /api/users` - Tüm kullanıcıları getir (sadece admin)
+- `GET /api/users/:id` - Belirli bir kullanıcıyı getir
+
+## API Dokümantasyonu
+
+Bu projede API dokümantasyonu için Swagger/OpenAPI kullanılmıştır. Swagger UI aracılığıyla API'nizi görsel olarak keşfedebilir ve test edebilirsiniz.
+
+### Swagger UI Erişimi
+
+API dokümantasyonuna aşağıdaki URL üzerinden erişebilirsiniz:
+
+```
+http://localhost:3000/api-docs
 ```
 
-## Lisans
+Dokümantasyon aşağıdaki özellikleri içerir:
+- Tüm API endpointlerinin detaylı açıklamaları
+- Request/Response şemaları
+- Örnek API çağrıları
+- Interaktif API testi yapabilme
+- Kimlik doğrulama gereksinimleri
 
-Bu proje [MIT lisansı](LICENSE) altında lisanslanmıştır. 
+### Swagger JSON
+
+OpenAPI şemasının JSON formatına aşağıdaki URL üzerinden erişebilirsiniz:
+
+```
+http://localhost:3000/api-docs.json
+```
+
+## Geliştirme Standartları
+
+Bu proje, `.cursorrules` dosyasında belirtilen Sportlink Development Standards (SCDS) kurallarına uygun olarak geliştirilmiştir.
