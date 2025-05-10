@@ -890,7 +890,8 @@ export const getUsersByRole = async (page: number = 1, limit: number = 10, sortB
     const { count, error: countError } = await supabaseAdmin
       .from('users')
       .select('*', { count: 'exact', head: true })
-      .eq('role', 'USER');
+      .eq('role', 'USER')
+      .eq('status', 'active');
     
     if (countError) {
       logger.error('Kullanıcı sayısı alınırken hata oluştu:', countError);
@@ -923,7 +924,8 @@ export const getUsersByRole = async (page: number = 1, limit: number = 10, sortB
           phone,
           bio
         `)
-        .eq('role', 'USER');
+        .eq('role', 'USER')
+        .eq('status', 'active');
         
       if (usersError) {
         logger.error('Kullanıcılar alınırken hata oluştu:', usersError);
@@ -994,7 +996,8 @@ export const getUsersByRole = async (page: number = 1, limit: number = 10, sortB
           phone,
           bio
         `)
-        .eq('role', 'USER');
+        .eq('role', 'USER')
+        .eq('status', 'active');
       
       // Sıralama kriterine göre sırala
       if (sortBy === 'new') {

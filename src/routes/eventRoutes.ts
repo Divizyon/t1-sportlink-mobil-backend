@@ -40,6 +40,17 @@ const router = express.Router();
  *           type: number
  *           default: 1
  *         description: Arama yarıçapı (km)
+ *       - in: query
+ *         name: date
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Belirli bir güne ait etkinlikleri filtrelemek için tarih (YYYY-MM-DD formatında)
+ *       - in: query
+ *         name: sport_id
+ *         schema:
+ *           type: integer
+ *         description: Belirli bir spor türüne ait etkinlikleri filtrelemek için spor ID'si
  *     responses:
  *       200:
  *         description: Yakındaki etkinlikler başarıyla getirildi
