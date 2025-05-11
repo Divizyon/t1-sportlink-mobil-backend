@@ -40,3 +40,4 @@ docker-compose.override.yml
 # Postman Collection
 postman/
 postman/*.json 
+.vercel
