@@ -33,7 +33,7 @@ export const login = async (credentials: LoginDTO, ip: string = '127.0.0.1') => 
       // Kullanıcının users tablosunda olup olmadığını kontrol et
       const { data: existingUser, error: userCheckError } = await supabaseAdmin
         .from('users')
-        .select('id')
+        .select('id, freeze_status, status')
         .eq('id', data.user.id)
         .single();
       
@@ -126,6 +126,38 @@ export const login = async (credentials: LoginDTO, ip: string = '127.0.0.1') => 
         }
       } else {
         console.log('User already exists in database:', existingUser.id);
+        
+        // Kullanıcı statusu inactive ise giriş yapmasına izin verme
+        if (existingUser.status === 'inactive') {
+          console.log('User has inactive status, login denied');
+          logger.warn(`Login attempt blocked for inactive user: ${data.user.id}`);
+          
+          // Kullanıcıyı Supabase auth'dan sign out et ve hata döndür
+          await supabase.auth.signOut();
+          
+          throw new UnauthorizedError('Bu hesap devre dışı bırakılmıştır. Lütfen destek ekibiyle iletişime geçin.');
+        }
+        
+        // Eğer kullanıcının freeze_status'u true ise, false olarak güncelle
+        if (existingUser.freeze_status === true) {
+          console.log('User has freeze_status=true, resetting it to false');
+          
+          const { error: updateError } = await supabaseAdmin
+            .from('users')
+            .update({ 
+              freeze_status: false,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', data.user.id);
+            
+          if (updateError) {
+            console.error('Error resetting freeze_status:', updateError);
+            logger.error(`Failed to reset freeze_status for user ${data.user.id}:`, updateError);
+          } else {
+            console.log('Successfully reset freeze_status to false');
+            logger.info(`Reset freeze_status to false for user ${data.user.id}`);
+          }
+        }
       }
     }
     

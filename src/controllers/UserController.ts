@@ -460,6 +460,22 @@ export const deleteAccountController = async (req: Request, res: Response) => {
     // Hesap silme işlemini gerçekleştir
     const result = await userService.requestAccountDeletion(userId);
     
+    // İşlem başarılı ise oturumu kapat
+    if (result.success) {
+      // Supabase oturumunu sonlandır
+      await supabase.auth.signOut();
+      
+      // JWT token'ı temizle - response'a çerez ekleyerek
+      res.cookie('jwt', '', {
+        expires: new Date(0),
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      });
+      
+      logger.info(`Kullanıcı hesabı silindi ve oturum kapatıldı: ${userId}`);
+    }
+    
     // Eğer kullanıcı rolü USER ise, raporları getir
     if (userRole === 'USER' && result.success) {
       try {
