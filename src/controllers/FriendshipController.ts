@@ -247,3 +247,49 @@ export const updateOnlineStatus = async (req: Request, res: Response) => {
     });
   }
 };
+
+export const cancelFriendRequest = async (req: Request, res: Response) => {
+  try {
+    const { requestId } = req.params;
+    
+    if (!req.userId) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Kullanıcı ID bulunamadı. Lütfen tekrar giriş yapın.'
+      });
+    }
+    
+    const userId = req.userId;
+
+    if (!requestId) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Geçerli bir istek ID gereklidir.'
+      });
+    }
+
+    const result = await friendshipService.cancelFriendRequest(userId, parseInt(requestId));
+
+    res.status(200).json({
+      status: 'success',
+      data: { canceled: result }
+    });
+  } catch (error) {
+    console.error('Arkadaşlık isteği iptal hatası:', error);
+    
+    // Özel hata durumlarını kontrol et
+    const errorMessage = error instanceof Error ? error.message : 'Arkadaşlık isteği iptal edilirken bir hata oluştu.';
+    
+    if (errorMessage.includes('İptal edilecek arkadaşlık isteği bulunamadı')) {
+      return res.status(404).json({
+        status: 'error',
+        message: errorMessage
+      });
+    }
+    
+    res.status(400).json({
+      status: 'error',
+      message: errorMessage
+    });
+  }
+};
