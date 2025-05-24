@@ -635,3 +635,51 @@ export const updateOnlineStatus = async (userId: string, isOnline: boolean) => {
     throw error;
   }
 };
+
+/**
+ * Gönderilen arkadaşlık isteğini iptal eder
+ */
+export const cancelFriendRequest = async (requesterId: string, requestId: number): Promise<boolean> => {
+  logger.info(`Arkadaşlık isteği iptal etme işlemi başladı. İstek ID: ${requestId}, Kullanıcı ID: ${requesterId}`);
+  
+  try {
+    // İsteğin var olduğunu ve kullanıcının kendi isteği olduğunu doğrula
+    const { data: request, error: getError } = await supabaseAdmin
+      .from('friendship_requests')
+      .select('*')
+      .eq('id', requestId)
+      .eq('requester_id', requesterId)
+      .eq('status', 'pending')
+      .maybeSingle();
+    
+    if (getError) {
+      logger.error(`Arkadaşlık isteği kontrolü hatası: ${JSON.stringify(getError)}`);
+      throw getError;
+    }
+    
+    if (!request) {
+      logger.error(`İptal edilecek arkadaşlık isteği bulunamadı veya istek size ait değil. İstek ID: ${requestId}`);
+      throw new Error('İptal edilecek arkadaşlık isteği bulunamadı veya istek size ait değil.');
+    }
+    
+    // İsteği sil (veya deleted olarak işaretle)
+    const { error: updateError } = await supabaseAdmin
+      .from('friendship_requests')
+      .update({ 
+        status: 'deleted',
+        updated_at: new Date() 
+      })
+      .eq('id', requestId);
+    
+    if (updateError) {
+      logger.error(`Arkadaşlık isteği iptal hatası: ${JSON.stringify(updateError)}`);
+      throw updateError;
+    }
+    
+    logger.info(`Arkadaşlık isteği başarıyla iptal edildi. İstek ID: ${requestId}`);
+    return true;
+  } catch (error) {
+    logger.error(`Arkadaşlık isteği iptal işlemi sırasında hata: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`);
+    throw error;
+  }
+};

@@ -288,4 +288,30 @@ router.delete('/:friendId', FriendshipController.removeFriendship);
  */
 router.put('/status', FriendshipController.updateOnlineStatus);
 
+/**
+ * @swagger
+ * /api/mobile/friendships/requests/{requestId}:
+ *   delete:
+ *     summary: Gönderilen arkadaşlık isteğini iptal et
+ *     tags: [Mobile - Friendships]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: requestId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Arkadaşlık isteği başarıyla iptal edildi
+ *       400:
+ *         description: Geçersiz istek
+ *       401:
+ *         description: Yetkisiz erişim
+ *       404:
+ *         description: İptal edilecek istek bulunamadı
+ */
+router.delete('/requests/:requestId', FriendshipController.cancelFriendRequest);
+
 export default router;
