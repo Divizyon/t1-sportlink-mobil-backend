@@ -30,6 +30,15 @@ export const updateProfile = async (req: Request, res: Response) => {
       throw new UnauthorizedError('User not authenticated');
     }
 
+    // DEBUG: Log RAW request body first
+    logger.info(`[Profile Update] RAW request body received:`, {
+      rawBody: JSON.stringify(req.body, null, 2),
+      bodyKeys: Object.keys(req.body || {}),
+      firstNameValue: req.body?.first_name,
+      firstNameType: typeof req.body?.first_name,
+      firstNameLength: req.body?.first_name?.length
+    });
+
     // DEBUG: Log the user ID and request details
     logger.info(`[Profile Update] Request received for user ID: ${userId}`, {
       userEmail: req.user?.email,
@@ -43,6 +52,18 @@ export const updateProfile = async (req: Request, res: Response) => {
 
     // Body'den sadece izin verilen alanları al
     const { first_name, last_name, email, phone, bio, gender, birthday_date, address } = req.body;
+    
+    // DEBUG: Log extracted values
+    logger.info(`[Profile Update] Extracted values:`, {
+      first_name,
+      last_name,
+      email,
+      phone,
+      bio,
+      gender,
+      birthday_date,
+      address
+    });
     
     if (!first_name || !last_name) { // İsim ve soyisim zorunlu
         throw new BadRequestError('First name and last name are required.');
