@@ -666,6 +666,16 @@ export const getUserProfileById = async (userId: string): Promise<UserProfileDat
     throw new NotFoundError('User profile not found');
   }
 
+  // DEBUG: Log the raw data from database
+  logger.info(`[getUserProfileById] Raw data from database for user ${userId}:`, {
+    first_name: data.first_name,
+    last_name: data.last_name,
+    email: data.email,
+    phone: data.phone,
+    bio: data.bio,
+    birthday_date: data.birthday_date
+  });
+
   const { count: eventCount, error: eventError } = await supabase
     .from('Event_Participants')
     .select('*', { count: 'exact', head: true })
@@ -685,7 +695,7 @@ export const getUserProfileById = async (userId: string): Promise<UserProfileDat
     logger.error(`Error getting friend count for user ID: ${userId}`, err);
   }
 
-  return {
+  const result = {
     name: `${data.first_name || ''} ${data.last_name || ''}`.trim(),
     email: data.email,
     phone: data.phone,
@@ -699,6 +709,16 @@ export const getUserProfileById = async (userId: string): Promise<UserProfileDat
     total_events: eventCount || 0,
     friend_count: friendCount
   };
+
+  // DEBUG: Log the final result being returned
+  logger.info(`[getUserProfileById] Final result for user ${userId}:`, {
+    name: result.name,
+    first_name: result.first_name,
+    last_name: result.last_name,
+    email: result.email
+  });
+
+  return result;
 };
 
 interface UpdateUserProfileDTO {
