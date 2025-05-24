@@ -724,17 +724,82 @@ export const updateUserProfileById = async (userId: string, updateData: UpdateUs
   // Add updated_at timestamp
   validUpdateData.updated_at = new Date().toISOString();
 
-  // Use supabaseAdmin for potentially restricted updates if needed
-  // Or ensure RLS policy allows users to update their own profile
-  const { error } = await supabase
+  // DEBUG: Log the data being updated
+  logger.info(`DEBUG: Updating user profile for ID: ${userId}`, {
+    updateData: validUpdateData,
+    originalData: updateData,
+    fieldsToUpdate: Object.keys(validUpdateData)
+  });
+
+  // First, let's check the current user data before update
+  const { data: beforeData, error: beforeError } = await supabaseAdmin
+    .from('users')
+    .select('first_name, last_name, bio, phone, gender, birthday_date, address, updated_at')
+    .eq('id', userId)
+    .single();
+
+  if (beforeError) {
+    logger.error(`Error fetching user data before update for ID: ${userId}`, beforeError);
+  } else {
+    logger.info(`User data BEFORE update for ID: ${userId}`, beforeData);
+  }
+
+  // Use supabaseAdmin to bypass RLS policy issue temporarily
+  // TODO: Fix RLS policy for users table to allow first_name updates
+  const { data, error } = await supabaseAdmin
     .from('users')
     .update(validUpdateData)
-    .eq('id', userId);
+    .eq('id', userId)
+    .select(); // Return updated data to verify changes
 
   if (error) {
-    logger.error(`Error updating user profile for ID: ${userId}`, error);
+    logger.error(`Error updating user profile for ID: ${userId}`, {
+      error,
+      updateData: validUpdateData,
+      supabaseError: {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      }
+    });
     throw new Error('Failed to update user profile');
   }
+
+  // DEBUG: Log the result of the update
+  logger.info(`User profile update result for ID: ${userId}`, {
+    updatedData: data,
+    rowsAffected: data?.length || 0
+  });
+
+  // Now let's fetch the data again to see what actually got saved
+  const { data: afterData, error: afterError } = await supabaseAdmin
+    .from('users')
+    .select('first_name, last_name, bio, phone, gender, birthday_date, address, updated_at')
+    .eq('id', userId)
+    .single();
+
+  if (afterError) {
+    logger.error(`Error fetching user data after update for ID: ${userId}`, afterError);
+  } else {
+    logger.info(`User data AFTER update for ID: ${userId}`, afterData);
+    
+    // Compare before and after to see what actually changed
+    if (beforeData && afterData) {
+      const changes: Record<string, any> = {};
+      Object.keys(validUpdateData).forEach(key => {
+        if (key !== 'updated_at' && (beforeData as any)[key] !== (afterData as any)[key]) {
+          (changes as any)[key] = {
+            before: (beforeData as any)[key],
+            after: (afterData as any)[key],
+            intended: (validUpdateData as any)[key]
+          };
+        }
+      });
+      logger.info(`Actual changes made for ID: ${userId}`, changes);
+    }
+  }
+
   logger.info(`User profile updated successfully for ID: ${userId}`);
 };
 

@@ -29,6 +29,18 @@ export const updateProfile = async (req: Request, res: Response) => {
     if (!userId) {
       throw new UnauthorizedError('User not authenticated');
     }
+
+    // DEBUG: Log the user ID and request details
+    logger.info(`[Profile Update] Request received for user ID: ${userId}`, {
+      userEmail: req.user?.email,
+      userRole: req.userProfile?.role,
+      requestBody: req.body,
+      headers: {
+        authorization: req.headers.authorization ? 'Bearer [PRESENT]' : 'MISSING',
+        contentType: req.headers['content-type']
+      }
+    });
+
     // Body'den sadece izin verilen alanları al
     const { first_name, last_name, email, phone, bio, gender, birthday_date, address } = req.body;
     
@@ -62,11 +74,27 @@ export const updateProfile = async (req: Request, res: Response) => {
       birthday_date,
       address
     };
+
+    // DEBUG: Log the data being sent to service
+    logger.info(`[Profile Update] Calling userService.updateUserProfileById with:`, {
+      userId,
+      updateData,
+      fieldsToUpdate: Object.keys(updateData).filter(key => updateData[key] !== undefined)
+    });
     
     await userService.updateUserProfileById(userId, updateData);
     
     // Güncellenmiş profil verilerini döndür
     const updatedProfile = await userService.getUserProfileById(userId);
+
+    // DEBUG: Log the final result
+    logger.info(`[Profile Update] Update completed for user: ${userId}`, {
+      updatedProfile: {
+        first_name: updatedProfile.first_name,
+        last_name: updatedProfile.last_name,
+        name: updatedProfile.name
+      }
+    });
     
     logger.info(`Profile updated for user: ${userId}`);
     res.status(200).json({ 
