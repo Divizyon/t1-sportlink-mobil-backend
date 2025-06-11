@@ -100,7 +100,7 @@ export const updateProfile = async (req: Request, res: Response) => {
     logger.info(`[Profile Update] Calling userService.updateUserProfileById with:`, {
       userId,
       updateData,
-      fieldsToUpdate: Object.keys(updateData).filter(key => updateData[key] !== undefined)
+      fieldsToUpdate: Object.keys(updateData).filter(key => updateData[key as keyof typeof updateData] !== undefined)
     });
     
     await userService.updateUserProfileById(userId, updateData);
